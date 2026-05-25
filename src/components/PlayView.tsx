@@ -18,7 +18,7 @@ const VOICING_OPTIONS: { value: Voicing; label: string }[] = [
   { value: "full", label: "Full" },
 ];
 
-export function PlayView({ song }: { song: Song }) {
+export function PlayView({ song, onBack }: { song: Song; onBack?: () => void }) {
   const [idx, setIdx] = useState(0);
   const [voicing, setVoicing] = useState<Voicing>("simple");
   const [fingering, setFingering] = useState(true);
@@ -58,7 +58,15 @@ export function PlayView({ song }: { song: Song }) {
     <div className="play-page">
       <header className="topbar">
         <div className="topbar-left">
-          <a className="wordmark" href="#" aria-label="Alight">
+          <a
+            className="wordmark"
+            href="#"
+            aria-label="Alight - find another song"
+            onClick={(e) => {
+              e.preventDefault();
+              onBack?.();
+            }}
+          >
             <svg viewBox="0 0 28 36" aria-hidden="true" className="wordmark-mark">
               <g transform="translate(2,4)">
                 <rect x="0" y="6" width="22" height="26" fill="none" stroke="currentColor" strokeWidth="1.25" />

@@ -1,0 +1,268 @@
+/* Load-a-song view. Generous negative space framing one search field.
+   Alternates are first-class, paste fallback is first-class.
+   The screen has no centred-CTA energy - the search is anchored
+   to the left rule, with alternates hanging below it.
+   Ported from design/system/ui_kits/load/load.css. */
+
+.load-page {
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 48px;
+  box-sizing: border-box;
+}
+
+.load-stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(300px, 1fr);
+  gap: 56px;
+  align-items: start;
+  padding: 48px 0 80px;
+}
+
+@media (max-width: 980px) {
+  .load-stage {
+    grid-template-columns: 1fr;
+    gap: 48px;
+  }
+  .paste-column {
+    border-left: 0;
+    border-top: 1px solid var(--hairline);
+    padding-left: 0;
+    padding-top: 32px;
+  }
+}
+
+@media (max-width: 1100px) {
+  .load-page { padding: 0 24px; }
+}
+
+.load-stage .heading {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+.load-stage .heading h1 {
+  font-family: var(--font-display);
+  font-size: 44px;
+  font-weight: 400;
+  letter-spacing: -0.012em;
+  color: var(--ink-primary);
+  line-height: 1.05;
+}
+.load-stage .heading .sub {
+  font-family: var(--font-text);
+  font-size: 14px;
+  color: var(--ink-tertiary);
+}
+
+.search-field {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--surface-sunken);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-1);
+  padding: 18px 20px;
+  transition: border-color var(--dur-toggle) var(--ease-out);
+}
+.search-field:focus-within { border-color: var(--ink-primary); }
+.search-field button.search-icon {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  display: inline-flex;
+  color: var(--ink-tertiary);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.search-field button.search-icon:focus-visible { outline: 2px solid var(--ink-primary); outline-offset: 3px; }
+.search-field svg { width: 20px; height: 20px; flex-shrink: 0; }
+.search-field input {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  outline: 0;
+  width: 100%;
+  font-family: var(--font-text);
+  font-size: 18px;
+  color: var(--ink-primary);
+  caret-color: var(--ink-primary);
+}
+.search-field input::placeholder { color: var(--ink-tertiary); }
+
+/* Searching indicator */
+.load-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 28px 0 8px;
+  font-family: var(--font-text);
+  font-size: 14px;
+  color: var(--ink-tertiary);
+}
+.load-status .spinner {
+  width: 13px;
+  height: 13px;
+  border-radius: 999px;
+  border: 1.5px solid var(--hairline-strong);
+  border-top-color: var(--ink-secondary);
+  animation: load-spin 0.7s linear infinite;
+}
+@keyframes load-spin { to { transform: rotate(360deg); } }
+
+/* Best match: the single dominant result. */
+.best-match-label { margin: 28px 0 8px; display: block; }
+.match-card {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 22px;
+  border: 1px solid var(--ink-primary);
+  border-radius: var(--radius-1);
+  background: var(--surface-base);
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  font: inherit;
+  transition: background-color var(--dur-toggle) var(--ease-out);
+}
+.match-card:hover { background: var(--surface-sunken); }
+.match-card:focus-visible { outline: 2px solid var(--ink-primary); outline-offset: 2px; }
+.match-card.is-soft { border-color: var(--hairline-strong); cursor: default; }
+.match-card .title {
+  font-family: var(--font-display);
+  font-size: 24px;
+  letter-spacing: -0.012em;
+  color: var(--ink-primary);
+  line-height: 1.1;
+}
+.match-card .artist {
+  font-family: var(--font-text);
+  font-size: 14px;
+  color: var(--ink-tertiary);
+  margin-top: 4px;
+}
+.match-card .key-tag {
+  font-family: var(--font-display);
+  font-size: 22px;
+  color: var(--ink-primary);
+  padding: 4px 12px;
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--radius-2);
+  line-height: 1;
+}
+
+/* Alternates list */
+.alts-label { margin: 24px 0 4px; display: block; }
+.alts-list { display: flex; flex-direction: column; }
+.alt-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 14px;
+  align-items: center;
+  padding: 14px 4px;
+  border: 0;
+  border-bottom: 1px solid var(--hairline);
+  background: transparent;
+  text-align: left;
+  width: 100%;
+  font: inherit;
+  cursor: pointer;
+  transition: background-color var(--dur-toggle) var(--ease-out),
+              padding var(--dur-toggle) var(--ease-out);
+}
+.alt-row:last-child { border-bottom: 0; }
+.alt-row:hover { padding-left: 8px; padding-right: 8px; background: var(--surface-sunken); }
+.alt-row:focus-visible { outline: 2px solid var(--ink-primary); outline-offset: -2px; }
+.alt-row .label-left { display: flex; align-items: baseline; gap: 10px; }
+.alt-row .v-label { font-family: var(--font-text); font-size: 14px; color: var(--ink-secondary); }
+.alt-row .v-detail { font-family: var(--font-text); font-size: 12px; color: var(--ink-tertiary); }
+.alt-row .key-tag { font-family: var(--font-display); font-size: 16px; color: var(--ink-secondary); }
+
+/* Right column: paste fallback. First-class, never an apology. */
+.paste-column {
+  border-left: 1px solid var(--hairline);
+  padding-left: 40px;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.paste-column .head { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+.paste-column h2 {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 400;
+  letter-spacing: -0.012em;
+  color: var(--ink-primary);
+}
+.paste-column .sub { font-size: 13px; color: var(--ink-tertiary); }
+
+.paste-area {
+  background: var(--surface-sunken);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-1);
+  padding: 14px 16px;
+  font-family: var(--font-text);
+  font-variant-numeric: tabular-nums;
+  font-size: 14px;
+  color: var(--ink-primary);
+  line-height: 1.7;
+  letter-spacing: 0.01em;
+  min-height: 240px;
+  resize: vertical;
+  outline: 0;
+  transition: border-color var(--dur-toggle) var(--ease-out);
+  white-space: pre;
+}
+.paste-area:focus { border-color: var(--ink-primary); }
+.paste-area::placeholder { color: var(--ink-tertiary); }
+
+.paste-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 8px; }
+.btn-primary {
+  appearance: none;
+  background: var(--ink-primary);
+  color: var(--surface-base);
+  border: 0;
+  border-radius: var(--radius-1);
+  padding: 12px 18px;
+  font-family: var(--font-text);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color var(--dur-toggle) var(--ease-out);
+}
+.btn-primary:hover { background: color-mix(in oklch, var(--ink-primary) 88%, white); }
+.btn-primary:disabled { background: var(--hairline-strong); cursor: not-allowed; color: var(--ink-tertiary); }
+.btn-primary:focus-visible { outline: 2px solid var(--ink-primary); outline-offset: 2px; }
+
+.paste-hint { font-family: var(--font-text); font-size: 12px; color: var(--ink-tertiary); }
+.paste-error { font-family: var(--font-text); font-size: 13px; color: var(--ink-secondary); margin-top: 4px; }
+
+/* Fetch-down banner. Quiet, never alarming. */
+.fetch-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  margin-bottom: 24px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-1);
+  background: var(--surface-raised);
+  font-family: var(--font-text);
+  font-size: 13px;
+  color: var(--ink-secondary);
+}
+.fetch-banner .dot {
+  width: 6px;
+  height: 6px;
+  background: var(--ink-secondary);
+  border-radius: 999px;
+  flex-shrink: 0;
+}

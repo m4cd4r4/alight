@@ -4,6 +4,7 @@ import App from "./App.tsx";
 import "./styles/colors_and_type.css";
 import "./styles/piano.css";
 import "./styles/play.css";
+import "./styles/load.css";
 
 const rootElement = document.getElementById("root");
 if (!rootElement) throw new Error("Root element #root not found");

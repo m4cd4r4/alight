@@ -4,21 +4,33 @@ Type a song, see two mini piano keyboards (left hand + right hand) light up
 exactly which keys to press for each chord as you step through. A calm,
 literal "which keys do I press" tool for hobbyist players.
 
-This repo currently contains the **scaffold + Play view** built on static
-sample data. See [docs/BRIEF.md](docs/BRIEF.md) for the full product and
+A **Load view** (find a song by title, or paste a chord sheet) feeds the
+**Play view**. See [docs/BRIEF.md](docs/BRIEF.md) for the full product and
 [docs/CLAUDE-TODO.md](docs/CLAUDE-TODO.md) for what is deliberately not built yet.
 
 ## Run
 
 ```bash
 npm install
-npm run dev      # serves the Play view at http://localhost:5173
-npm run build    # type-checks (tsc -b, strict) and builds to dist/
+npm run dev          # Vite dev server at http://localhost:5173 (UI only)
+vercel dev           # full app + the /api/chords proxy (needed to fetch by title)
+npm run build        # type-checks (tsc -b, strict) and builds to dist/
+npm test             # parser tests (Node's built-in runner)
+npm run typecheck:api # type-checks the serverless function
 ```
+
+The auto-fetch path needs the serverless proxy, so run `vercel dev` to exercise
+it. Under plain `npm run dev` the title search has no backend and falls back to
+the paste box. Ultimate Guitar sits behind Cloudflare and refuses datacenter IPs,
+so fetch works from a normal connection but not from CI or a cloud shell.
 
 ## What works
 
-- The **Play view** on a static sample song (Landslide).
+- **Find a song**: type a title to fetch chords from Ultimate Guitar (best version
+  auto-picked, alternates one tap away), or paste a chord sheet. Both run the same
+  parser; capo songs are transposed to true piano pitch. A blocked or empty fetch
+  drops cleanly to the paste box.
+- The **Play view** on the chosen song.
 - Two keyboards (left `C2-E3`, right `F3-B4`) lighting the exact voiced keys,
   with note name + finger number, hands distinguished by colour AND shape
   (square = left, triangle = right).
