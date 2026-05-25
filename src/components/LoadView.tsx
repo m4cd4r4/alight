@@ -8,9 +8,9 @@ import { parse } from "../music/parse.ts";
 import type { Song } from "../music/types.ts";
 
 interface VersionRef {
+  id: number;
   song: string;
   artist: string;
-  url: string;
   votes: number;
   rating: number;
   version: number;
@@ -33,11 +33,11 @@ interface ApiError {
 
 type FetchResult = { data: ChordsResponse } | { error: ApiError };
 
-async function getChords(query: { title: string } | { url: string }): Promise<FetchResult> {
+async function getChords(query: { title: string } | { id: number }): Promise<FetchResult> {
   const qs =
     "title" in query
       ? `title=${encodeURIComponent(query.title)}`
-      : `url=${encodeURIComponent(query.url)}`;
+      : `id=${encodeURIComponent(String(query.id))}`;
   try {
     const res = await fetch(`/api/chords?${qs}`);
     const body: unknown = await res.json();
@@ -120,7 +120,7 @@ function Alternates({
       <div className="t-label-caps alts-label">Wrong version? Pick another</div>
       <div className="alts-list">
         {versions.map((v) => (
-          <button type="button" key={v.url} className="alt-row" onClick={() => onPick(v)}>
+          <button type="button" key={v.id} className="alt-row" onClick={() => onPick(v)}>
             <span className="label-left">
               <span className="v-label">Version {v.version || "alt"}</span>
               <span className="v-detail">{v.votes.toLocaleString()} ratings</span>
@@ -213,7 +213,7 @@ export function LoadView({ onLoad }: { onLoad: (song: Song) => void }) {
   async function loadVersion(v: VersionRef) {
     setParseNote(null);
     setState({ status: "loading-version" });
-    const result = await getChords({ url: v.url });
+    const result = await getChords({ id: v.id });
     if ("data" in result) {
       const song = songFromResponse(result.data);
       if (song.chords.length === 0) {

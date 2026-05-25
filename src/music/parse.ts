@@ -30,6 +30,7 @@ interface ChordParts {
 
 const NC_RE = /^n\.?c\.?$/i; // N.C., NC, N.C, NC. - "no chord"
 const CH_RE = /\[ch\](.*?)\[\/ch\]/gi; // a fetched chord token
+const FRET_RE = /[0-9xX]{4,}/; // a guitar fret pattern (320003, x32010) - marks a chord-diagram legend line
 const SECTION_RE = /^\s*\[[^\]]+\]\s*$/; // a whole-line section marker, e.g. [Chorus]
 // Trailing repeat count: "x4", "(x4)", "4x", "(4x)", preceded by start or space.
 const REPEAT_RE = /(^|\s)\(?\s*(?:x\s*(\d+)|(\d+)\s*x)\s*\)?\s*$/i;
@@ -126,6 +127,9 @@ function splitRepeat(line: string): { body: string; count: number } {
 /** Extract the in-order chord tokens from a single content line, or null. */
 function chordTokensFromLine(body: string): string[] | null {
   if (body.includes("[ch]")) {
+    // Skip chord-diagram legend lines, e.g. "[ch]G[/ch]   320003": a chord
+    // followed by a fret pattern defines a shape, it is not the progression.
+    if (FRET_RE.test(body.replace(CH_RE, " "))) return null;
     return [...body.matchAll(CH_RE)].map((m) => m[1]);
   }
   if (isBareChordLine(body)) {

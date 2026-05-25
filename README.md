@@ -19,10 +19,13 @@ npm test             # parser tests (Node's built-in runner)
 npm run typecheck:api # type-checks the serverless function
 ```
 
-The auto-fetch path needs the serverless proxy, so run `vercel dev` to exercise
-it. Under plain `npm run dev` the title search has no backend and falls back to
-the paste box. Ultimate Guitar sits behind Cloudflare and refuses datacenter IPs,
-so fetch works from a normal connection but not from CI or a cloud shell.
+The auto-fetch path needs the serverless function, so run `vercel dev` to exercise
+it locally. Under plain `npm run dev` the title search has no backend and falls
+back to the paste box. The function calls Ultimate Guitar's signed mobile API
+(`api.ultimate-guitar.com`), not the Cloudflare-fronted website, so it works from
+the deployed function and from `vercel dev`. The API request signing is
+reverse-engineered; if UG rotates it, auto-fetch breaks until the signing in
+[api/chords.ts](api/chords.ts) is updated, and paste remains the fallback.
 
 ## What works
 

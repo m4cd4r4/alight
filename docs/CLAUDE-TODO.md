@@ -9,12 +9,25 @@ next session does not have to rediscover the boundary.
 The two items below are no longer out of scope - they shipped in Wave 2:
 
 - **Ultimate Guitar fetch proxy** - `api/chords.ts`. `GET ?title=` searches UG,
-  picks the best non-Pro chord version by rating x votes, returns clean JSON
-  (`artist, song, capo, tuning, tonality, content, versions[]`); `GET ?url=`
-  loads a specific alternate. Browser User-Agent, 8s timeouts, host allow-list
-  with manual same-site redirect following (no open relay), guarded JSON.parse,
-  structured errors, never reflects raw upstream. Cloudflare 403s degrade to a
-  "paste the chord sheet" message.
+  picks the best chord version by rating x votes, returns clean JSON
+  (`artist, song, capo, tuning, tonality, content, versions[]`); `GET ?id=`
+  loads a specific alternate by tab id. 8s timeouts, guarded JSON.parse,
+  structured errors, never reflects raw upstream, transient upstream failures
+  degrade to a "paste the chord sheet" message.
+
+  IMPORTANT - data source: the brief assumed scraping `div.js-store[data-content]`
+  off the UG website (the freetar mechanism). That is DEAD - UG rewrote the site
+  into a React SPA that embeds no chord data in HTML, and the website is behind
+  Cloudflare which blocks datacenter IPs. Instead the function calls UG's signed
+  mobile API at `api.ultimate-guitar.com` (NOT Cloudflare-fronted, reachable from
+  Vercel directly - no VPS/proxy needed). Auth: `X-UG-API-KEY = md5(deviceId +
+  utcDate("YYYY-MM-DD:HH") + "createLog()")` with a `UGT_ANDROID/...` user agent;
+  `X-UG-CLIENT-ID = deviceId`. Endpoints: `/api/v1/tab/search?title=` and
+  `/api/v1/tab/info?tab_id=`. This signing is reverse-engineered (ref:
+  github.com/Pilfer/ultimate-guitar-scraper); UG can rotate the salt/date format,
+  which breaks auto-fetch until the `ugHeaders()` signing is updated. Paste is the
+  permanent fallback. There is no SSRF surface: one hardcoded host, numeric id or
+  encoded title only - no user-supplied URL.
 - **Shared parser** - `src/music/parse.ts`. One parser for both fetch and paste:
   decodes entities, strips `[tab]`, reads `[ch]` tags or bare chord lines, splits
   sections, expands `xN` repeats (capped), filters `N.C.`, maps German `H` to `B`,

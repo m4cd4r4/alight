@@ -89,6 +89,20 @@ test("runaway repeat counts are bounded", () => {
   assert.equal(song.chords.length, 16, "x999 capped to 8 passes of C G");
 });
 
+test("chord-diagram legend lines (chord + fret pattern) are skipped", () => {
+  const content = [
+    "[ch]G[/ch]     320003",
+    "[ch]C[/ch]     x32010",
+    "[ch]D/F#[/ch]  2x0232",
+    "",
+    "[Verse]",
+    "[ch]C[/ch]   [ch]G[/ch]",
+    "lyric words on this line",
+  ].join("\n");
+  // Only the Verse progression survives; the three legend rows are dropped.
+  assert.deepEqual(parse(content).chords, ["C", "G"]);
+});
+
 test("empty or chordless input yields an empty progression, never throws", () => {
   assert.deepEqual(parse("").chords, []);
   assert.deepEqual(parse("just some lyrics with no chords at all\nmore words").chords, []);
