@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="../colors_and_type.css"><link rel="stylesheet" href="_card.css">
+<style>
+  .swatch { height: 72px; display:flex; align-items:flex-end; padding: 8px 10px; box-sizing:border-box; }
+  .marker { width: 14px; height: 14px; }
+  .marker svg { width: 100%; height: 100%; display:block; }
+  .gs { filter: grayscale(1); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div style="display:grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px;">
+    <div class="col">
+      <div class="swatch" style="background:var(--hand-left);">
+        <span class="marker" style="color:var(--hand-left-ink);"><svg viewBox="0 0 12 12"><rect x="2" y="2" width="8" height="8" fill="currentColor"/></svg></span>
+      </div>
+      <div class="caption" style="margin-top:8px;">Left, colour</div>
+      <div class="value">45% 0.075 215</div>
+    </div>
+    <div class="col">
+      <div class="swatch gs" style="background:var(--hand-left);">
+        <span class="marker" style="color:var(--hand-left-ink);"><svg viewBox="0 0 12 12"><rect x="2" y="2" width="8" height="8" fill="currentColor"/></svg></span>
+      </div>
+      <div class="caption" style="margin-top:8px;">Left, greyscale</div>
+      <div class="value">L = 45</div>
+    </div>
+    <div class="col">
+      <div class="swatch" style="background:var(--hand-right);">
+        <span class="marker" style="color:var(--hand-right-ink);"><svg viewBox="0 0 12 12"><path d="M6 10 L2 3 L10 3 Z" fill="currentColor"/></svg></span>
+      </div>
+      <div class="caption" style="margin-top:8px;">Right, colour</div>
+      <div class="value">68% 0.115 55</div>
+    </div>
+    <div class="col">
+      <div class="swatch gs" style="background:var(--hand-right);">
+        <span class="marker" style="color:var(--hand-right-ink);"><svg viewBox="0 0 12 12"><path d="M6 10 L2 3 L10 3 Z" fill="currentColor"/></svg></span>
+      </div>
+      <div class="caption" style="margin-top:8px;">Right, greyscale</div>
+      <div class="value">L = 68</div>
+    </div>
+  </div>
+  <div class="label" style="font-size: 12px;">23-point lightness gap plus shape marker. Distinguishable in greyscale and across the common colour-blindness profiles.</div>
+</div>
+</body></html>

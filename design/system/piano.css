@@ -1,0 +1,341 @@
+/* ============================================================
+   Piano keyboard primitives.
+   The keyboard diagram is the brand. Highlighted = "press this".
+   Hands are distinguished by colour AND shape marker.
+   ============================================================ */
+
+.pck-keyboard {
+  --pck-white-w: 44px;
+  --pck-white-h: 200px;
+  --pck-black-w: 26px;
+  --pck-black-h: 124px;
+  --pck-marker:  10px;
+
+  position: relative;
+  display: inline-flex;
+  align-items: flex-start;
+  background: transparent;
+  user-select: none;
+}
+
+.pck-keyboard.pck-sm {
+  --pck-white-w: 26px;
+  --pck-white-h: 110px;
+  --pck-black-w: 16px;
+  --pck-black-h: 70px;
+  --pck-marker:  7px;
+}
+
+.pck-keyboard.pck-md {
+  --pck-white-w: 34px;
+  --pck-white-h: 160px;
+  --pck-black-w: 20px;
+  --pck-black-h: 96px;
+  --pck-marker:  8px;
+}
+
+/* The row of white keys. Black keys are positioned absolutely
+   over the whites by .pck-black with --offset. */
+.pck-whites {
+  display: flex;
+  position: relative;
+  z-index: 1;
+}
+
+.pck-key {
+  box-sizing: border-box;
+  position: relative;
+  font-family: var(--font-text);
+  font-variant-numeric: tabular-nums;
+  transition: background-color var(--dur-chord) var(--ease-out),
+              color var(--dur-chord) var(--ease-out),
+              border-color var(--dur-chord) var(--ease-out);
+}
+
+.pck-white {
+  width: var(--pck-white-w);
+  height: var(--pck-white-h);
+  background: var(--surface-key-white);
+  border: 1px solid var(--hairline-strong);
+  border-right-width: 0;
+  box-shadow: var(--shadow-key);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding-bottom: 10px;
+  color: var(--ink-tertiary);
+}
+.pck-white:last-child { border-right-width: 1px; }
+
+.pck-black {
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  width: var(--pck-black-w);
+  height: var(--pck-black-h);
+  background: var(--surface-key-black);
+  border: 1px solid var(--surface-key-black);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding-bottom: 8px;
+  color: var(--ink-on-dark);
+  left: var(--offset);
+  transform: translateX(-50%);
+}
+
+/* Note label and finger number, shown only when key is lit. */
+.pck-note   { font-size: 15px; font-weight: 700; opacity: 0; transition: opacity var(--dur-chord) var(--ease-out); }
+.pck-finger { font-size: 13px; opacity: 0; margin-top: 2px; transition: opacity var(--dur-chord) var(--ease-out); }
+.pck-sm .pck-note   { font-size: 12px; }
+.pck-sm .pck-finger { font-size: 11px; }
+.pck-md .pck-note   { font-size: 14px; }
+.pck-md .pck-finger { font-size: 12px; }
+
+/* Hand marker (square = left, triangle = right). */
+.pck-marker {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: var(--pck-marker);
+  height: var(--pck-marker);
+  opacity: 0;
+  transition: opacity var(--dur-chord) var(--ease-out);
+}
+.pck-marker svg { width: 100%; height: 100%; display: block; }
+
+/* ---- Lit states --------------------------------------------- */
+
+/* Left hand, now */
+.pck-key.is-left.is-now {
+  background: var(--hand-left);
+  border-color: var(--hand-left);
+  color: var(--hand-left-ink);
+}
+.pck-key.is-left.is-now.pck-black { border-color: var(--hand-left); }
+.pck-key.is-left.is-now .pck-marker { opacity: 1; color: var(--hand-left-ink); }
+.pck-key.is-left.is-now .pck-note,
+.pck-key.is-left.is-now .pck-finger { opacity: 1; }
+
+/* Right hand, now */
+.pck-key.is-right.is-now {
+  background: var(--hand-right);
+  border-color: var(--hand-right);
+  color: var(--hand-right-ink);
+}
+.pck-key.is-right.is-now.pck-black { border-color: var(--hand-right); }
+.pck-key.is-right.is-now .pck-marker { opacity: 1; color: var(--hand-right-ink); }
+.pck-key.is-right.is-now .pck-note,
+.pck-key.is-right.is-now .pck-finger { opacity: 1; }
+
+/* Left, next preview — soft fill, marker outline only */
+.pck-key.is-left.is-next {
+  background: var(--hand-left-soft);
+  border-color: color-mix(in oklch, var(--hand-left) 40%, transparent);
+  color: var(--hand-left);
+}
+.pck-key.is-left.is-next .pck-marker { opacity: 0.65; color: var(--hand-left); }
+.pck-key.is-left.is-next .pck-marker .fill { display: none; }
+.pck-key.is-left.is-next .pck-marker .outline { display: block; }
+.pck-key.is-left.is-next .pck-note   { opacity: 0.7; }
+.pck-key.is-left.is-next .pck-finger { opacity: 0.5; }
+
+/* Right, next preview */
+.pck-key.is-right.is-next {
+  background: var(--hand-right-soft);
+  border-color: color-mix(in oklch, var(--hand-right) 40%, transparent);
+  color: var(--hand-right);
+}
+.pck-key.is-right.is-next .pck-marker { opacity: 0.7; color: var(--hand-right); }
+.pck-key.is-right.is-next .pck-marker .fill { display: none; }
+.pck-key.is-right.is-next .pck-marker .outline { display: block; }
+.pck-key.is-right.is-next .pck-note   { opacity: 0.75; }
+.pck-key.is-right.is-next .pck-finger { opacity: 0.55; }
+
+/* Markers default to filled glyph; "is-next" hides .fill and shows .outline */
+.pck-marker .outline { display: none; }
+
+/* ============================================================
+   Chord label (now + next)
+   ============================================================ */
+.pck-chord-now {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.pck-chord-now .name {
+  font-family: var(--font-display);
+  font-size: var(--t-display-xl);
+  font-weight: 400;
+  letter-spacing: -0.012em;
+  line-height: 1;
+  color: var(--ink-primary);
+}
+.pck-chord-now .inversion {
+  font-family: var(--font-text);
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-tertiary);
+}
+
+.pck-chord-next {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  color: var(--ink-ghost);
+}
+.pck-chord-next .label-caps {
+  font-family: var(--font-text);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-tertiary);
+}
+.pck-chord-next .name {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 400;
+  letter-spacing: -0.012em;
+  color: var(--ink-ghost);
+}
+
+/* ============================================================
+   Transport controls
+   ============================================================ */
+.pck-transport {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid var(--hairline);
+  background: var(--surface-raised);
+  border-radius: var(--radius-1);
+  padding: 4px;
+}
+.pck-transport button {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 8px 12px;
+  cursor: pointer;
+  color: var(--ink-secondary);
+  border-radius: var(--radius-1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color var(--dur-toggle) var(--ease-out),
+              color var(--dur-toggle) var(--ease-out);
+}
+.pck-transport button:hover { color: var(--ink-primary); background: var(--surface-sunken); }
+.pck-transport button:active { background: color-mix(in oklch, var(--ink-primary) 8%, transparent); }
+.pck-transport button:focus-visible { outline: 2px solid var(--ink-primary); outline-offset: 2px; }
+.pck-transport button.primary {
+  background: var(--ink-primary);
+  color: var(--surface-base);
+  padding: 8px 14px;
+}
+.pck-transport button.primary:hover { background: color-mix(in oklch, var(--ink-primary) 88%, white); }
+.pck-transport button svg { width: 18px; height: 18px; }
+
+/* ============================================================
+   Toggles (segmented and switch)
+   ============================================================ */
+.pck-segmented {
+  display: inline-flex;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-1);
+  background: var(--surface-raised);
+  padding: 2px;
+  gap: 0;
+}
+.pck-segmented button {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 6px 12px;
+  font-family: var(--font-text);
+  font-size: 13px;
+  color: var(--ink-tertiary);
+  border-radius: 0;
+  cursor: pointer;
+  transition: background-color var(--dur-toggle) var(--ease-out),
+              color var(--dur-toggle) var(--ease-out);
+}
+.pck-segmented button[aria-pressed="true"] {
+  background: var(--ink-primary);
+  color: var(--surface-base);
+}
+.pck-segmented button:hover:not([aria-pressed="true"]) { color: var(--ink-primary); }
+
+.pck-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-text);
+  font-size: 13px;
+  color: var(--ink-secondary);
+  cursor: pointer;
+}
+.pck-switch input { position: absolute; opacity: 0; pointer-events: none; }
+.pck-switch .track {
+  width: 30px; height: 16px;
+  background: var(--hairline-strong);
+  border-radius: 999px;
+  position: relative;
+  transition: background-color var(--dur-toggle) var(--ease-out);
+}
+.pck-switch .track::after {
+  content: ""; position: absolute; top: 2px; left: 2px;
+  width: 12px; height: 12px; border-radius: 999px;
+  background: var(--surface-base);
+  transition: transform var(--dur-toggle) var(--ease-out);
+}
+.pck-switch input:checked + .track { background: var(--ink-primary); }
+.pck-switch input:checked + .track::after { transform: translateX(14px); }
+
+/* ============================================================
+   Hand badges (used in lists, settings, legends)
+   Left = square chip. Right = triangle-tipped chip.
+   ============================================================ */
+.pck-hand-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-text);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+}
+.pck-hand-badge .swatch {
+  width: 12px; height: 12px;
+  display: inline-block;
+}
+.pck-hand-badge.left  .swatch { background: var(--hand-left); }
+.pck-hand-badge.right .swatch {
+  background: transparent;
+  width: 12px; height: 11px;
+  clip-path: polygon(50% 100%, 0 0, 100% 0);
+  background: var(--hand-right);
+}
+
+/* ============================================================
+   Song row (used in songbook + load alternates)
+   ============================================================ */
+.pck-song-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: baseline;
+  gap: 16px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--hairline);
+  cursor: pointer;
+  transition: background-color var(--dur-toggle) var(--ease-out);
+}
+.pck-song-row:hover { background: var(--surface-sunken); }
+.pck-song-row .title { font-family: var(--font-text); font-size: 17px; color: var(--ink-primary); }
+.pck-song-row .artist { font-family: var(--font-text); font-size: 13px; color: var(--ink-tertiary); }
+.pck-song-row .key { font-family: var(--font-display); font-size: 18px; color: var(--ink-secondary); }

@@ -1,0 +1,155 @@
+/* Songbook view — personal library. Quiet list, asymmetric header. */
+
+html, body { height: 100%; }
+
+.songbook-page {
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  padding: 0 48px;
+  box-sizing: border-box;
+}
+
+.songbook-stage {
+  padding: 48px 0 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.songbook-head {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: 24px;
+  border-bottom: 1px solid var(--hairline);
+  padding-bottom: 24px;
+}
+.songbook-head h1 {
+  font-family: var(--font-display);
+  font-size: 48px;
+  font-weight: 400;
+  letter-spacing: -0.012em;
+  color: var(--ink-primary);
+  line-height: 1;
+}
+.songbook-head .meta {
+  font-family: var(--font-text);
+  font-size: 13px;
+  color: var(--ink-tertiary);
+  margin-top: 10px;
+}
+.songbook-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Toolbar row: search + view options */
+.songbook-toolbar {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 16px;
+  align-items: center;
+}
+.search-field-inline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface-sunken);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-1);
+  padding: 10px 14px;
+  max-width: 360px;
+}
+.search-field-inline svg { width: 16px; height: 16px; color: var(--ink-tertiary); }
+.search-field-inline input {
+  appearance: none; background: transparent; border: 0; outline: 0;
+  width: 100%;
+  font-family: var(--font-text); font-size: 14px; color: var(--ink-primary);
+}
+.search-field-inline input::placeholder { color: var(--ink-tertiary); }
+.search-field-inline:focus-within { border-color: var(--ink-primary); }
+
+/* Songs table */
+.songs-table {
+  display: grid;
+  grid-template-columns: 1fr 1fr 80px 120px 60px;
+  gap: 0;
+}
+.songs-th {
+  font-family: var(--font-text);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-tertiary);
+  padding: 8px 0;
+  border-bottom: 1px solid var(--hairline);
+}
+.songs-row {
+  display: contents;
+}
+.songs-row > .cell {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--hairline);
+  font-family: var(--font-text);
+  color: var(--ink-secondary);
+  display: flex;
+  align-items: center;
+  transition: color var(--dur-toggle) var(--ease-out);
+}
+.songs-row:hover > .cell { color: var(--ink-primary); cursor: pointer; }
+.songs-row .title  { font-size: 17px; color: var(--ink-primary); }
+.songs-row .artist { font-size: 14px; }
+.songs-row .key    { font-family: var(--font-display); font-size: 18px; color: var(--ink-secondary); }
+.songs-row .last   { font-size: 13px; color: var(--ink-tertiary); font-variant-numeric: tabular-nums; }
+.songs-row .actions { justify-content: flex-end; gap: 4px; opacity: 0; transition: opacity var(--dur-toggle) var(--ease-out); }
+.songs-row:hover .actions { opacity: 1; }
+.songs-row .actions .icon-btn { padding: 6px; }
+.songs-row .actions .icon-btn svg { width: 16px; height: 16px; }
+
+/* Section separator */
+.songs-section-label {
+  grid-column: 1 / -1;
+  font-family: var(--font-text);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-tertiary);
+  padding: 32px 0 8px;
+  border-bottom: 0;
+}
+.songs-section-label:first-child { padding-top: 0; }
+
+/* Empty state, when search returns nothing. */
+.songbook-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 64px 0;
+  color: var(--ink-tertiary);
+}
+.songbook-empty .head {
+  font-family: var(--font-display);
+  font-size: 22px;
+  color: var(--ink-secondary);
+}
+.songbook-empty .sub { font-family: var(--font-text); font-size: 14px; }
+
+/* Button variant for the head actions */
+.btn-secondary {
+  appearance: none;
+  background: transparent;
+  border: 1px solid var(--hairline-strong);
+  color: var(--ink-secondary);
+  border-radius: var(--radius-1);
+  padding: 8px 14px;
+  font-family: var(--font-text);
+  font-size: 13px;
+  cursor: pointer;
+  transition: color var(--dur-toggle) var(--ease-out),
+              border-color var(--dur-toggle) var(--ease-out);
+}
+.btn-secondary:hover { color: var(--ink-primary); border-color: var(--ink-primary); }
+.btn-secondary:focus-visible { outline: 2px solid var(--ink-primary); outline-offset: 2px; }

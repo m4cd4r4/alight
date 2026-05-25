@@ -1,0 +1,54 @@
+/* Shared card shell — used by every preview/*.html file.
+   Cards are framed by the Design System tab; this just ensures
+   the inside reads at the right scale without margin/scroll. */
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--surface-base);
+  color: var(--ink-primary);
+  font-family: var(--font-text);
+  overflow: hidden;
+}
+.card {
+  width: 700px;
+  box-sizing: border-box;
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.card.split {
+  flex-direction: row;
+  align-items: center;
+  gap: 32px;
+}
+.card.dark {
+  background: var(--surface-base);
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.col {
+  display: flex;
+  flex-direction: column;
+}
+.caption {
+  font-family: var(--font-text);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-tertiary);
+}
+.value {
+  font-family: var(--font-text);
+  font-size: 11px;
+  color: var(--ink-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+.label {
+  font-family: var(--font-text);
+  font-size: 13px;
+  color: var(--ink-secondary);
+}

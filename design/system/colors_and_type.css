@@ -1,0 +1,228 @@
+/* ============================================================
+   Alight — Foundations
+   Colors in OKLCH. Two type families. Sharp-leaning corners.
+   Light theme is primary; dark theme via [data-theme="dark"].
+   ============================================================ */
+
+/* Webfonts. Self-host preferred; falling back to Google CDN. */
+@import url('https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+
+:root {
+  /* ---- Color: surface and ink (light theme) ---------------- */
+  /* Cool showroom white — gallery daylight, not cream. Shares the
+     cool hue spine (~255) with the dark "piano lid" theme. */
+  --surface-base:      oklch(97.8% 0.004 255);  /* page bg, cool paper */
+  --surface-raised:    oklch(96.0% 0.005 255);  /* card, panel */
+  --surface-sunken:    oklch(93.8% 0.006 255);  /* search field, recessed */
+  --surface-key-white: oklch(99.0% 0.003 255);  /* white piano key face */
+  --surface-key-black: oklch(22.0% 0.012 255);  /* black piano key face */
+
+  --hairline:          oklch(88.0% 0.007 255);  /* 1px borders */
+  --hairline-strong:   oklch(78.0% 0.009 255);  /* emphasised dividers */
+
+  --ink-primary:       oklch(20.0% 0.014 255);  /* chord names, headings */
+  --ink-secondary:     oklch(42.0% 0.011 255);  /* body, secondary labels */
+  --ink-tertiary:      oklch(60.0% 0.009 255);  /* metadata, chrome */
+  --ink-ghost:         oklch(75.0% 0.007 255);  /* next-chord preview */
+  --ink-on-dark:       oklch(96.0% 0.004 255);  /* text on black keys */
+
+  /* ---- Hand identity --------------------------------------- */
+  /* Left = cool slate-teal at L=45. Right = warm ember at L=68.
+     23-point lightness gap → distinguishable in greyscale.
+     Pair with shape markers (square = left, triangle = right)
+     for full colour-blind safety. */
+  --hand-left:         oklch(45.0% 0.075 215);  /* slate-teal */
+  --hand-left-soft:    oklch(45.0% 0.075 215 / 0.18);
+  --hand-left-ink:     oklch(98.0% 0.005 215);  /* text on hand-left fill */
+
+  --hand-right:        oklch(68.0% 0.115 55);   /* ember-amber */
+  --hand-right-soft:   oklch(68.0% 0.115 55 / 0.20);
+  --hand-right-ink:    oklch(18.0% 0.020 55);   /* text on hand-right fill */
+
+  /* ---- Now vs Next emphasis -------------------------------- */
+  /* "Now" uses full hand colour. "Next" is the same hue at low
+     opacity with no marker fill — clearly subordinate, never
+     confusable with the current chord. */
+  --now-emphasis:      1.0;
+  --next-emphasis:     0.32;
+
+  /* ---- Pulse (metronome / playing indicator) --------------- */
+  --pulse:             oklch(78.0% 0.070 90);   /* faint warm gold */
+  --pulse-soft:        oklch(78.0% 0.070 90 / 0.35);
+
+  /* ---- Typography ----------------------------------------- */
+  --font-display: 'Spectral', 'Iowan Old Style', Georgia, serif;
+  --font-text:    'Atkinson Hyperlegible', 'Lucida Grande', Tahoma, sans-serif;
+
+  /* Type scale — modular, restrained. Headings use Spectral,
+     UI/labels use Atkinson Hyperlegible. */
+  --t-display-xl:  clamp(56px, 7vw, 84px);  /* chord name, hero */
+  --t-display-lg:  44px;                     /* chord name, dense */
+  --t-display-md:  32px;                     /* section heading */
+  --t-display-sm:  22px;                     /* card title */
+
+  --t-text-lg:     19px;                     /* song row, primary body */
+  --t-text-md:     15px;                     /* default UI */
+  --t-text-sm:     13px;                     /* secondary label */
+  --t-text-xs:     11px;                     /* metadata, finger num */
+
+  --t-mono-lg:     20px;                     /* note name "E♭", "C" */
+  --t-mono-md:     14px;                     /* note on small keyboard */
+  --t-mono-sm:     11px;                     /* finger number */
+
+  --lh-tight:      1.05;                     /* big display */
+  --lh-snug:       1.25;                     /* headings */
+  --lh-normal:     1.45;                     /* body */
+  --lh-loose:      1.65;                     /* prose */
+
+  --tracking-display: -0.012em;
+  --tracking-text:    0em;
+  --tracking-label:   0.06em;                /* small caps labels */
+
+  /* ---- Spacing — 4px grid --------------------------------- */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  24px;
+  --space-6:  32px;
+  --space-7:  48px;
+  --space-8:  64px;
+  --space-9:  96px;
+  --space-10: 128px;
+
+  /* ---- Corners -------------------------------------------- */
+  /* Mostly sharp. Slight softening on cards and pills only. */
+  --radius-0: 0;        /* piano keys, hard edges */
+  --radius-1: 2px;      /* cards, buttons, inputs */
+  --radius-2: 3px;      /* chord label tag, pills */
+  --radius-full: 999px; /* circular markers only */
+
+  /* ---- Borders -------------------------------------------- */
+  --border-hairline: 1px solid var(--hairline);
+  --border-strong:   1px solid var(--hairline-strong);
+  --border-ink:      1px solid var(--ink-primary);
+
+  /* ---- Elevation ------------------------------------------ */
+  /* Almost flat. One soft downward shadow for the rare
+     floating element (menu, toast). */
+  --shadow-flat:   none;
+  --shadow-soft:   0 1px 0 oklch(0% 0 0 / 0.04),
+                   0 8px 24px -8px oklch(0% 0 0 / 0.08);
+  --shadow-key:    inset 0 -2px 0 oklch(0% 0 0 / 0.05); /* key body */
+  --shadow-key-on: inset 0 0 0 1.5px var(--ink-primary); /* active key ring */
+
+  /* ---- Motion --------------------------------------------- */
+  --ease-out:      cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-inout:    cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-chord:     240ms;   /* chord-to-chord crossfade */
+  --dur-toggle:    180ms;   /* UI state */
+  --dur-pulse:     800ms;   /* metronome */
+  --dur-instant:   80ms;    /* hover */
+}
+
+/* ============================================================
+   Dark theme — "closed piano lid". Reuses same hand hues with
+   raised lightness so they sit on dark surface.
+   ============================================================ */
+[data-theme="dark"] {
+  --surface-base:      oklch(16.0% 0.010 260);  /* near-black with blue tilt */
+  --surface-raised:    oklch(20.0% 0.012 260);
+  --surface-sunken:    oklch(13.0% 0.010 260);
+  --surface-key-white: oklch(92.0% 0.006 80);   /* white keys stay light */
+  --surface-key-black: oklch(8.0% 0.008 260);   /* black keys near-true-black */
+
+  --hairline:          oklch(28.0% 0.012 260);
+  --hairline-strong:   oklch(38.0% 0.014 260);
+
+  --ink-primary:       oklch(96.0% 0.005 85);
+  --ink-secondary:     oklch(72.0% 0.008 85);
+  --ink-tertiary:      oklch(52.0% 0.010 85);
+  --ink-ghost:         oklch(38.0% 0.012 85);
+  --ink-on-dark:       oklch(96.0% 0.005 85);
+
+  --hand-left:         oklch(62.0% 0.090 215);  /* lifted L on dark bg */
+  --hand-left-soft:    oklch(62.0% 0.090 215 / 0.22);
+  --hand-left-ink:     oklch(12.0% 0.010 215);
+
+  --hand-right:        oklch(78.0% 0.125 55);
+  --hand-right-soft:   oklch(78.0% 0.125 55 / 0.22);
+  --hand-right-ink:    oklch(18.0% 0.020 55);
+
+  --pulse:             oklch(82.0% 0.075 90);
+  --pulse-soft:        oklch(82.0% 0.075 90 / 0.30);
+
+  --shadow-soft:       0 1px 0 oklch(0% 0 0 / 0.6),
+                       0 12px 32px -8px oklch(0% 0 0 / 0.5);
+  --shadow-key:        inset 0 -2px 0 oklch(0% 0 0 / 0.3);
+}
+
+/* ============================================================
+   Semantic element styles. Use these classes (or copy their
+   rules) rather than reaching for tokens directly when possible.
+   ============================================================ */
+
+html, body {
+  background: var(--surface-base);
+  color: var(--ink-primary);
+  font-family: var(--font-text);
+  font-size: var(--t-text-md);
+  line-height: var(--lh-normal);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Display — Spectral, used for chord labels and section titles.
+   Optical size is set per element via font-optical-sizing. */
+.t-display-xl,
+.t-display-lg,
+.t-display-md,
+.t-display-sm {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: var(--tracking-display);
+  line-height: var(--lh-snug);
+  font-optical-sizing: auto;
+}
+.t-display-xl { font-size: var(--t-display-xl); line-height: var(--lh-tight); font-weight: 400; }
+.t-display-lg { font-size: var(--t-display-lg); }
+.t-display-md { font-size: var(--t-display-md); }
+.t-display-sm { font-size: var(--t-display-sm); }
+
+/* Text — Atkinson Hyperlegible, for UI, lists, controls, captions. */
+.t-text-lg { font-size: var(--t-text-lg); }
+.t-text-md { font-size: var(--t-text-md); }
+.t-text-sm { font-size: var(--t-text-sm); }
+.t-text-xs { font-size: var(--t-text-xs); letter-spacing: var(--tracking-label); }
+
+/* Mono-feel — note names and finger numbers. We use Atkinson
+   tabular-figures rather than introducing a third family;
+   Atkinson's wide, even letterforms already read like a
+   tabular-friendly humanist sans. */
+.t-mono {
+  font-family: var(--font-text);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+.t-label-caps {
+  font-family: var(--font-text);
+  font-size: var(--t-text-xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-tertiary);
+}
+
+h1 { font-family: var(--font-display); font-size: var(--t-display-lg); font-weight: 400; letter-spacing: var(--tracking-display); line-height: var(--lh-snug); color: var(--ink-primary); margin: 0; }
+h2 { font-family: var(--font-display); font-size: var(--t-display-md); font-weight: 400; letter-spacing: var(--tracking-display); line-height: var(--lh-snug); color: var(--ink-primary); margin: 0; }
+h3 { font-family: var(--font-display); font-size: var(--t-display-sm); font-weight: 500; letter-spacing: var(--tracking-display); line-height: var(--lh-snug); color: var(--ink-primary); margin: 0; }
+p  { color: var(--ink-secondary); margin: 0; }
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

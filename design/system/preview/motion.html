@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="../colors_and_type.css"><link rel="stylesheet" href="_card.css">
+<style>
+  .row { display: grid; grid-template-columns: 120px 80px 1fr; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--hairline); }
+  .row:last-child { border-bottom: 0; }
+  .bar-track { height: 4px; background: var(--surface-sunken); position: relative; }
+  .bar-fill  { position: absolute; top: 0; left: 0; height: 100%; background: var(--ink-primary); animation: sweep var(--d) var(--ease-out) infinite; }
+  @keyframes sweep { 0% { width: 0; } 100% { width: 100%; } }
+</style>
+</head>
+<body>
+<div class="card" style="padding-top: 18px; padding-bottom: 18px;">
+  <div class="row"><div class="caption">--dur-instant</div><div class="value">80ms</div><div class="bar-track"><div class="bar-fill" style="--d:80ms;"></div></div></div>
+  <div class="row"><div class="caption">--dur-toggle</div><div class="value">180ms</div><div class="bar-track"><div class="bar-fill" style="--d:180ms;"></div></div></div>
+  <div class="row"><div class="caption">--dur-chord</div><div class="value">240ms</div><div class="bar-track"><div class="bar-fill" style="--d:240ms;"></div></div></div>
+  <div class="row"><div class="caption">--dur-pulse</div><div class="value">800ms</div><div class="bar-track"><div class="bar-fill" style="--d:800ms;"></div></div></div>
+</div>
+</body></html>

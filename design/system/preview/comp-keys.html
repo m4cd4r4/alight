@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="../colors_and_type.css"><link rel="stylesheet" href="../piano.css"><link rel="stylesheet" href="_card.css">
+<style>
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; align-items: end; justify-items: center; }
+  .pck-keyboard { --pck-white-w: 50px; --pck-white-h: 140px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="grid">
+    <!-- Off, white -->
+    <div class="col" style="align-items:center; gap:10px;">
+      <div class="pck-keyboard"><div class="pck-whites">
+        <div class="pck-key pck-white"></div>
+      </div></div>
+      <div class="caption">Off</div>
+    </div>
+    <!-- Left, now -->
+    <div class="col" style="align-items:center; gap:10px;">
+      <div class="pck-keyboard"><div class="pck-whites">
+        <div class="pck-key pck-white is-left is-now">
+          <span class="pck-marker"><svg viewBox="0 0 12 12"><rect class="fill" x="2" y="2" width="8" height="8" fill="currentColor"/><rect class="outline" x="2.5" y="2.5" width="7" height="7" fill="none" stroke="currentColor" stroke-width="1.2"/></svg></span>
+          <span class="pck-note">C</span>
+          <span class="pck-finger">5</span>
+        </div>
+      </div></div>
+      <div class="caption">Left, now</div>
+    </div>
+    <!-- Right, now -->
+    <div class="col" style="align-items:center; gap:10px;">
+      <div class="pck-keyboard"><div class="pck-whites">
+        <div class="pck-key pck-white is-right is-now">
+          <span class="pck-marker"><svg viewBox="0 0 12 12"><path class="fill" d="M6 10 L2 3 L10 3 Z" fill="currentColor"/><path class="outline" d="M6 9.5 L2.6 3.5 L9.4 3.5 Z" fill="none" stroke="currentColor" stroke-width="1.2"/></svg></span>
+          <span class="pck-note">E</span>
+          <span class="pck-finger">3</span>
+        </div>
+      </div></div>
+      <div class="caption">Right, now</div>
+    </div>
+    <!-- Right, next -->
+    <div class="col" style="align-items:center; gap:10px;">
+      <div class="pck-keyboard"><div class="pck-whites">
+        <div class="pck-key pck-white is-right is-next">
+          <span class="pck-marker"><svg viewBox="0 0 12 12"><path class="fill" d="M6 10 L2 3 L10 3 Z" fill="currentColor"/><path class="outline" d="M6 9.5 L2.6 3.5 L9.4 3.5 Z" fill="none" stroke="currentColor" stroke-width="1.2"/></svg></span>
+          <span class="pck-note">F</span>
+          <span class="pck-finger">3</span>
+        </div>
+      </div></div>
+      <div class="caption">Right, next</div>
+    </div>
+  </div>
+</div>
+</body></html>

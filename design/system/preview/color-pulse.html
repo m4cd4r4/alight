@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="../colors_and_type.css"><link rel="stylesheet" href="_card.css">
+<style>
+  .dot { width: 18px; height: 18px; border-radius: 999px; background: var(--pulse); display:inline-block; box-shadow: 0 0 0 0 var(--pulse-soft); animation: pulse 800ms var(--ease-out) infinite; }
+  @keyframes pulse {
+    0%   { box-shadow: 0 0 0 0 var(--pulse-soft); transform: scale(1); }
+    70%  { box-shadow: 0 0 0 14px transparent; transform: scale(1); }
+    100% { box-shadow: 0 0 0 0 transparent; transform: scale(1); }
+  }
+</style>
+</head>
+<body>
+<div class="card split">
+  <div class="col" style="gap: 8px; align-items:center;">
+    <div class="dot"></div>
+    <div class="caption">Pulse</div>
+  </div>
+  <div class="col" style="flex:1;">
+    <div class="value" style="margin-bottom: 4px;">78% 0.070 90 — warm gold</div>
+    <div class="label">Used only for the metronome tick and the "something is playing" indicator. Animates opacity / soft ring, never scale. Respects prefers-reduced-motion.</div>
+  </div>
+</div>
+</body></html>

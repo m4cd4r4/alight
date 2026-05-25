@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="../colors_and_type.css"><link rel="stylesheet" href="../piano.css"><link rel="stylesheet" href="_card.css">
+<style>
+  .field { display:flex; align-items:center; gap:10px; background: var(--surface-sunken); border: 1px solid var(--hairline); border-radius: 2px; padding: 12px 14px; }
+  .field input { appearance: none; background: transparent; border: 0; outline: 0; font-family: var(--font-text); font-size: 16px; color: var(--ink-primary); width: 100%; }
+  .field input::placeholder { color: var(--ink-tertiary); }
+  .field svg { width: 18px; height: 18px; color: var(--ink-tertiary); flex-shrink: 0; }
+  .field:focus-within { border-color: var(--ink-primary); }
+  .ta { background: var(--surface-sunken); border: 1px solid var(--hairline); border-radius: 2px; padding: 10px 12px; font-family: var(--font-text); font-size: 13px; color: var(--ink-secondary); min-height: 44px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="field">
+    <svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="5.5" fill="none" stroke="currentColor" stroke-width="1.25"/><line x1="14.6" y1="14.6" x2="19" y2="19" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/></svg>
+    <input placeholder="Type a song title">
+  </div>
+  <div class="ta">Or paste a chord sheet here. C  G  Am  F</div>
+</div>
+</body></html>

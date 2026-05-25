@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="../colors_and_type.css"><link rel="stylesheet" href="../piano.css"><link rel="stylesheet" href="_card.css">
+<style>
+  .legend { display:flex; gap: 28px; }
+  .item { display:flex; gap: 10px; align-items: center; }
+  .item .sq { width: 14px; height: 14px; background: var(--hand-left); }
+  .item .tr { width: 14px; height: 13px; clip-path: polygon(50% 100%, 0 0, 100% 0); background: var(--hand-right); }
+  .item .sq-out { width: 14px; height: 14px; border: 1.5px solid var(--hand-left); background: transparent; }
+  .item .tr-out { width: 14px; height: 13px; background: var(--hand-right); clip-path: polygon(50% 100%, 0 0, 100% 0); opacity: 0.4; }
+  .grid { display:grid; grid-template-columns: 1fr 1fr; gap: 16px 24px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="grid">
+    <div class="item"><span class="sq"></span><span class="label">Left hand, now</span></div>
+    <div class="item"><span class="tr"></span><span class="label">Right hand, now</span></div>
+    <div class="item"><span class="sq-out"></span><span class="label">Left hand, next</span></div>
+    <div class="item"><span class="tr-out"></span><span class="label">Right hand, next</span></div>
+  </div>
+  <div class="label" style="font-size: 12px;">Shape is the second cue — survives greyscale printing and the common colour-blindness profiles. Filled marker = now. Outline marker (or low-opacity) = next.</div>
+</div>
+</body></html>

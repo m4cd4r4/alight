@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="../colors_and_type.css"><link rel="stylesheet" href="_card.css">
+<style>
+  .key { width: 56px; height: 110px; background: var(--surface-key-white); border: 1px solid var(--hairline-strong); position: relative; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; padding-bottom: 10px; }
+  .key .marker { position: absolute; top: 8px; width: 10px; height: 10px; }
+  .key.now-left { background: var(--hand-left); color: var(--hand-left-ink); border-color: var(--hand-left); }
+  .key.next-left { background: var(--hand-left-soft); color: var(--hand-left); border-color: color-mix(in oklch, var(--hand-left) 40%, transparent); }
+  .key .note { font-family: var(--font-text); font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .key .finger { font-family: var(--font-text); font-size: 10px; opacity: 0.85; margin-top: 2px; }
+  .next-left .note, .next-left .finger { color: var(--hand-left); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div style="display:flex; align-items:flex-end; gap: 28px;">
+    <div class="col" style="align-items:center;">
+      <div class="key now-left">
+        <span class="marker" style="color:var(--hand-left-ink);"><svg viewBox="0 0 12 12"><rect x="2" y="2" width="8" height="8" fill="currentColor"/></svg></span>
+        <span class="note">C</span>
+        <span class="finger">5</span>
+      </div>
+      <div class="caption" style="margin-top:10px;">Now</div>
+      <div class="value">opacity 1.0</div>
+    </div>
+    <div class="col" style="align-items:center;">
+      <div class="key next-left">
+        <span class="marker" style="color:color-mix(in oklch, var(--hand-left) 50%, transparent);"><svg viewBox="0 0 12 12"><rect x="2" y="2" width="8" height="8" fill="none" stroke="currentColor" stroke-width="1.4"/></svg></span>
+        <span class="note">F</span>
+        <span class="finger">5</span>
+      </div>
+      <div class="caption" style="margin-top:10px;">Next</div>
+      <div class="value">opacity 0.32 / marker outline</div>
+    </div>
+    <div class="col" style="flex:1;">
+      <div class="label">"Now" is full hand colour with a filled marker. "Next" drops opacity and switches the marker to an outline. The two are unambiguous at a glance.</div>
+    </div>
+  </div>
+</div>
+</body></html>

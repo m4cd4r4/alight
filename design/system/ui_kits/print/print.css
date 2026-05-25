@@ -1,0 +1,246 @@
+/* Printable chord sheet — designed for music-stand visibility.
+   On screen: shows a US-letter page preview.
+   In print: full-bleed, no chrome, true greyscale-safe.
+
+   We deliberately do NOT use the hand colours here — printing is
+   typically B&W, so the page relies on hand-marker shapes and
+   weight to communicate. */
+
+@page {
+  size: letter portrait;
+  margin: 0;
+}
+
+html, body { background: var(--surface-base); }
+
+.print-page {
+  width: 8.5in;
+  min-height: 11in;
+  padding: 0.6in 0.7in;
+  margin: 32px auto;
+  background: #ffffff;
+  color: #111111;
+  box-shadow: 0 4px 32px oklch(0% 0 0 / 0.08);
+  box-sizing: border-box;
+  font-family: var(--font-text);
+}
+
+@media print {
+  body { background: #ffffff; }
+  .print-page {
+    margin: 0;
+    box-shadow: none;
+    width: 100%;
+    min-height: 100vh;
+    padding: 0.5in 0.6in;
+  }
+  .print-screen-only { display: none !important; }
+}
+
+/* Header ---------------------------------------------------- */
+.psheet-head {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: 24px;
+  border-bottom: 1px solid #111;
+  padding-bottom: 14px;
+}
+.psheet-head h1 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 34px;
+  letter-spacing: -0.012em;
+  line-height: 1;
+  color: #111;
+}
+.psheet-head .artist {
+  font-family: var(--font-text);
+  font-size: 14px;
+  color: #555;
+  margin-top: 6px;
+}
+.psheet-head .meta {
+  font-family: var(--font-text);
+  font-size: 12px;
+  color: #555;
+  text-align: right;
+  line-height: 1.5;
+  letter-spacing: 0.02em;
+}
+.psheet-head .meta strong { color: #111; font-weight: 700; }
+
+/* Chords-used strip ---------------------------------------- */
+.psheet-chords-strip {
+  margin: 18px 0 22px;
+  display: grid;
+  /* 4-across on letter for music-stand legibility; scales down gracefully. */
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 14px 18px;
+}
+.psheet-chord-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid #ccc;
+  background: #fff;
+  page-break-inside: avoid;
+}
+.psheet-chord-card .name {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: -0.012em;
+  color: #111;
+  line-height: 1;
+}
+.psheet-chord-card .inversion {
+  font-family: var(--font-text);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #777;
+}
+
+/* Tiny mono-tone keyboard for print ------------------------- */
+.psheet-kb {
+  position: relative;
+  display: inline-flex;
+  margin-top: 4px;
+}
+.psheet-kb .whites { display: flex; }
+.psheet-kb .w {
+  width: 16px; height: 64px;
+  background: #fff;
+  border: 0.75px solid #888;
+  border-right-width: 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding-bottom: 3px;
+  box-sizing: border-box;
+}
+.psheet-kb .w:last-child { border-right-width: 0.75px; }
+.psheet-kb .b {
+  position: absolute;
+  width: 11px; height: 40px;
+  background: #111;
+  top: 0;
+  transform: translateX(-50%);
+}
+/* Hand marks — pure shape, no colour. Filled = press now. */
+.psheet-kb .mark {
+  position: absolute;
+  top: 4px;
+  width: 9px; height: 9px;
+}
+.psheet-kb .mark.left  { background: #111; }   /* square */
+.psheet-kb .mark.right {
+  background: #111;
+  clip-path: polygon(50% 100%, 0 0, 100% 0);
+}
+.psheet-kb .w.is-on    { background: #ededed; }
+.psheet-kb .b.is-on    { background: #fff; outline: 0.75px solid #111; }
+.psheet-kb .w.is-on .mark { z-index: 2; }
+.psheet-kb .b.is-on .mark { background: #111; }
+.psheet-kb .note {
+  font-family: var(--font-text);
+  font-variant-numeric: tabular-nums;
+  font-size: 9px;
+  color: #111;
+  line-height: 1;
+}
+.psheet-kb .b .note { color: #fff; }
+.psheet-kb .b.is-on .note { color: #111; }
+
+/* Progression ---------------------------------------------- */
+.psheet-section {
+  margin-top: 18px;
+  page-break-inside: avoid;
+}
+.psheet-section-label {
+  font-family: var(--font-text);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #555;
+  margin-bottom: 6px;
+}
+.psheet-bar-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  border-left: 1px solid #aaa;
+}
+.psheet-bar {
+  border-right: 1px solid #aaa;
+  border-bottom: 1px solid #aaa;
+  border-top: 1px solid #aaa;
+  padding: 12px 10px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-height: 44px;
+}
+.psheet-bar .chord {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: -0.012em;
+  color: #111;
+  line-height: 1;
+}
+.psheet-bar .beat-marks {
+  font-family: var(--font-text);
+  font-size: 10px;
+  letter-spacing: 0.4em;
+  color: #999;
+}
+
+/* Lyric line under bars */
+.psheet-lyric {
+  font-family: var(--font-text);
+  font-size: 12px;
+  color: #333;
+  margin: 6px 0 14px;
+  letter-spacing: 0.01em;
+  line-height: 1.5;
+}
+
+/* Footer ---------------------------------------------------- */
+.psheet-footer {
+  margin-top: 24px;
+  padding-top: 10px;
+  border-top: 1px solid #ccc;
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-text);
+  font-size: 10px;
+  color: #777;
+  letter-spacing: 0.02em;
+}
+
+/* Screen-only print bar */
+.print-screen-only {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--surface-base);
+  border-bottom: 1px solid var(--hairline);
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--font-text);
+  font-size: 13px;
+  color: var(--ink-secondary);
+}
+.print-screen-only .meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
