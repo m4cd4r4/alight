@@ -1,6 +1,7 @@
 node_modules/
 dist/
 .vite/
+*.tsbuildinfo
 .vercel/
 coverage/
 *.log
@@ -9,3 +10,6 @@ coverage/
 !.env.example
 .DS_Store
 Thumbs.db
+
+# Local browser-verification screenshots (regenerated on demand, not committed)
+docs/verification/
