@@ -46,16 +46,25 @@ export function videoIdFromUrl(input: string): string | null {
  * browser, and forwards Innertube auth headers (X-YouTube-Client-*) untouched.
  */
 async function proxiedFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+  // youtubei.js sometimes calls fetch with a Request object instead of (url, init).
+  // We must lift method, headers and body off the Request - otherwise POSTs (notably
+  // the Innertube /v1/player call) silently degrade to GETs and YouTube returns 405.
+  const isRequest = typeof Request !== "undefined" && input instanceof Request;
   const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
   if (!YT_HOSTS_RE.test(url)) return fetch(input, init);
-  const headers = new Headers(init?.headers || {});
+
+  const reqHeaders = isRequest ? input.headers : new Headers();
+  const headers = new Headers(reqHeaders);
+  if (init?.headers) new Headers(init.headers).forEach((v, k) => headers.set(k, v));
   headers.set("x-alight-gate", storedGate());
-  // The Fetch API rejects GET/HEAD with a body. youtubei.js sometimes constructs
-  // RequestInit objects with `body: null` or an empty body even for GETs - the
-  // browser still throws. Strip body whenever we know the method has no payload.
-  const method = (init?.method || "GET").toUpperCase();
-  const safeInit: RequestInit = { ...init, headers, method };
-  if (method === "GET" || method === "HEAD") delete (safeInit as { body?: unknown }).body;
+
+  const method = (init?.method || (isRequest ? input.method : "GET")).toUpperCase();
+  const safeInit: RequestInit = { headers, method };
+  if (method !== "GET" && method !== "HEAD") {
+    // Prefer the explicit init.body; fall back to the Request's body stream.
+    if (init && "body" in init && init.body != null) safeInit.body = init.body;
+    else if (isRequest && input.body) safeInit.body = await input.arrayBuffer();
+  }
   return fetch(`/api/yt-proxy?url=${encodeURIComponent(url)}`, safeInit);
 }
 
