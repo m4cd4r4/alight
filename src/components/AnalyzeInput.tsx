@@ -14,6 +14,16 @@ interface AnalyzeResponse extends ChordMiniAnalysis {
   meta?: { title?: string; artist?: string; duration?: number };
 }
 
+/** Encode bytes to base64 in chunks (avoids the arg-count limit of fromCharCode). */
+function bytesToBase64(bytes: Uint8Array): string {
+  let binary = "";
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  }
+  return btoa(binary);
+}
+
 /** Trim YouTube title noise like "(Official Video)" / "[Lyrics]" / "(4K Remaster)". */
 function cleanTitle(raw: string): string {
   return raw
@@ -85,13 +95,17 @@ export function AnalyzeInput({ onLoad }: { onLoad: LoadHandler }) {
   async function analyseFile(file: File) {
     if (busy) return;
     setError(null);
+    if (file.size > 3_200_000) {
+      setError("That file is too large (about 3MB max here). Try a shorter clip or a lower-bitrate file.");
+      return;
+    }
     setBusy(true);
     try {
-      const qs = new URLSearchParams({ title: file.name.replace(/\.[^.]+$/, ""), artist: "" });
-      const res = await fetch(`/api/analyze?${qs.toString()}`, {
+      const audioBase64 = bytesToBase64(new Uint8Array(await file.arrayBuffer()));
+      const res = await fetch("/api/analyze", {
         method: "POST",
-        headers: { "Content-Type": file.type || "audio/mpeg", "x-alight-gate": storedGate() },
-        body: file,
+        headers: { "Content-Type": "application/json", "x-alight-gate": storedGate() },
+        body: JSON.stringify({ audioBase64, title: file.name.replace(/\.[^.]+$/, ""), artist: "" }),
       });
       if (!res.ok) {
         setError(await readError(res));

@@ -33,7 +33,10 @@ const BEAT_DETECTOR = "madmom";
 const DOWNLOAD_TIMEOUT_MS = 290_000;
 const ANALYSE_TIMEOUT_MS = 250_000;
 const LYRICS_TIMEOUT_MS = 20_000;
-const MAX_UPLOAD_BYTES = 4_400_000; // just under Vercel's ~4.5MB body limit
+// Uploads arrive base64-encoded inside the JSON body (Vercel only reliably
+// parses JSON), so the decoded audio must leave room for the ~33% base64
+// inflation under Vercel's ~4.5MB body limit.
+const MAX_UPLOAD_BYTES = 3_200_000;
 
 interface YtDownload {
   audio_path: string;
@@ -168,8 +171,18 @@ async function analyse(
 async function handleYoutube(res: VercelResponse, youtubeUrl: string): Promise<void> {
   const dl = await postJson("/api/alight/yt-download", { url: youtubeUrl }, DOWNLOAD_TIMEOUT_MS);
   if (dl.status !== 200 || !dl.json || typeof (dl.json as YtDownload).audio_path !== "string") {
-    const detail = (dl.json as { error?: string } | null)?.error;
-    return fail(res, 502, "download_failed", detail || "Could not fetch audio for that link.");
+    const j = dl.json as { error?: string; detail?: string } | null;
+    // YouTube increasingly blocks datacenter IPs with a bot check; point the user
+    // at the upload path, which does not touch YouTube.
+    const blocked = /not a bot|sign in to confirm|cookies/i.test(`${j?.detail ?? ""} ${j?.error ?? ""}`);
+    return fail(
+      res,
+      502,
+      "download_failed",
+      blocked
+        ? "YouTube blocked the download from the server. Upload the audio file instead."
+        : j?.error || "Could not fetch audio for that link.",
+    );
   }
   const d = dl.json as YtDownload;
   const audioPath = d.audio_path;
@@ -186,7 +199,7 @@ async function handleYoutube(res: VercelResponse, youtubeUrl: string): Promise<v
 async function handleUpload(res: VercelResponse, audio: Buffer, title: string, artist: string): Promise<void> {
   if (audio.length === 0) return fail(res, 400, "bad_request", "Empty upload.");
   if (audio.length > MAX_UPLOAD_BYTES) {
-    return fail(res, 413, "too_large", "That file is too large to upload here (about 4MB max). Use a YouTube link instead.");
+    return fail(res, 413, "too_large", "That file is too large (about 3MB max here). Try a shorter clip or a lower-bitrate file.");
   }
   await analyse(
     res,
@@ -207,21 +220,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     return fail(res, 503, "not_configured", "Audio analysis is not configured on this deployment.");
   }
 
-  const contentType = String(req.headers["content-type"] || "");
+  // The client always sends JSON: { youtubeUrl } or { audioBase64, title, artist }.
+  // Vercel only reliably parses JSON bodies, so uploads ride base64-in-JSON.
   try {
-    if (contentType.includes("application/json")) {
-      const body = (req.body ?? {}) as { youtubeUrl?: string };
-      const url = (body.youtubeUrl || "").trim();
-      if (!url) return fail(res, 400, "bad_request", "Provide a youtubeUrl, or POST audio bytes.");
-      return await handleYoutube(res, url);
+    const body = (req.body ?? {}) as {
+      youtubeUrl?: string;
+      audioBase64?: string;
+      title?: string;
+      artist?: string;
+    };
+    if (typeof body.audioBase64 === "string" && body.audioBase64.length > 0) {
+      const audio = Buffer.from(body.audioBase64, "base64");
+      return await handleUpload(res, audio, (body.title || "").trim(), (body.artist || "").trim());
     }
-    // Otherwise treat the body as raw audio bytes (upload fallback).
-    const body = req.body;
-    const audio = Buffer.isBuffer(body) ? body : typeof body === "string" ? Buffer.from(body) : null;
-    if (!audio) return fail(res, 400, "bad_request", "Send JSON { youtubeUrl } or raw audio bytes.");
-    const title = String((req.query.title as string) || "").trim();
-    const artist = String((req.query.artist as string) || "").trim();
-    return await handleUpload(res, audio, title, artist);
+    const url = (body.youtubeUrl || "").trim();
+    if (url) return await handleYoutube(res, url);
+    return fail(res, 400, "bad_request", "Provide a youtubeUrl or an audio file.");
   } catch (err) {
     const aborted = err instanceof Error && err.name === "AbortError";
     if (aborted) return fail(res, 504, "timeout", "The analysis took too long. Try a shorter song.");
