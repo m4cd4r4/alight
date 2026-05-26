@@ -11,6 +11,7 @@ Auth: none here - the nginx reverse proxy enforces the bearer token, and the
 container only listens on 127.0.0.1. This route shells out to yt-dlp, so it must
 never be exposed unauthenticated.
 """
+import os
 import re
 import subprocess
 import time
@@ -20,6 +21,20 @@ from flask import Blueprint, jsonify, request
 from utils.paths import AUDIO_DIR
 
 bp = Blueprint("alight_ingest", __name__)
+
+# YouTube blocks datacenter IPs with a bot check; logged-in cookies get past it.
+# Mounted read-write so yt-dlp can refresh the session and extend its life.
+# Absent or empty -> run without cookies (works for the rare unchallenged video).
+COOKIES_FILE = os.environ.get("YT_COOKIES", "/cookies/youtube.txt")
+
+
+def _cookie_args():
+    try:
+        if os.path.getsize(COOKIES_FILE) > 0:
+            return ["--cookies", COOKIES_FILE]
+    except OSError:
+        pass
+    return []
 
 # A full watch URL on youtube.com / youtu.be / music.youtube.com only. fullmatch
 # validates the whole string (an optional ?/&/# query tail is allowed, no
@@ -63,7 +78,7 @@ def yt_download():
 
     try:
         dl = subprocess.run(
-            ["yt-dlp", "-q", "--no-progress", "--no-playlist",
+            ["yt-dlp", *_cookie_args(), "-q", "--no-progress", "--no-playlist",
              "-f", "bestaudio", "-x", "--audio-format", "mp3",
              "--max-filesize", MAX_FILESIZE,
              "--match-filter", f"duration < {MAX_DURATION}",
@@ -84,7 +99,7 @@ def yt_download():
     title, artist, duration = "", "", 0.0
     try:
         meta = subprocess.run(
-            ["yt-dlp", "-q", "--no-warnings", "--skip-download", "--no-playlist",
+            ["yt-dlp", *_cookie_args(), "-q", "--no-warnings", "--skip-download", "--no-playlist",
              "--print", "%(title)s", "--print", "%(artist,uploader)s", "--print", "%(duration)s",
              url],
             capture_output=True, text=True, timeout=META_TIMEOUT,
