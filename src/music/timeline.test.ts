@@ -16,6 +16,13 @@ const sample = JSON.parse(
   readFileSync(join(import.meta.dirname, "__fixtures__", "sample-analysis.json"), "utf8"),
 ) as ChordMiniAnalysis;
 
+// A real response captured from the self-hosted ChordMini backend (2026-05-26):
+// a synthesised C-G-Am-F progression for chords/beats + an LRCLIB lyrics query.
+// Locks the mapper to the live backend's actual field shapes.
+const realResponse = JSON.parse(
+  readFileSync(join(import.meta.dirname, "__fixtures__", "chordmini-real-response.json"), "utf8"),
+) as ChordMiniAnalysis;
+
 test("chordMiniLabelToSymbol maps qualities, slash degrees, and no-chord", () => {
   assert.equal(chordMiniLabelToSymbol("C:maj"), "C");
   assert.equal(chordMiniLabelToSymbol("A:min"), "Am");
@@ -76,6 +83,18 @@ test("fromChordMini tolerates an empty/partial analysis without throwing", () =>
   assert.deepEqual(tl.lyrics, []);
   assert.equal(tl.beats, null);
   assert.equal(tl.duration, 0);
+});
+
+test("fromChordMini maps a real captured backend response correctly", () => {
+  const tl = fromChordMini(realResponse);
+  // The backend recognised the synthesised progression as N,C,G,Am,F; N drops.
+  assert.deepEqual(timelineSymbols(tl), ["C", "G", "Am", "F"]);
+  assert.equal(Math.round(tl.duration), 12);
+  assert.equal(tl.beats?.bpm, 80);
+  assert.equal(tl.beats?.timeSignature, "4/4");
+  // Real LRCLIB synced-lyric timestamps (text placeholdered; see fixture note).
+  assert.deepEqual(tl.lyrics[0], { time: 33.042, text: "Synced line 1" });
+  assert.ok(tl.lyrics.length > 1, "multiple synced lines parsed");
 });
 
 test("chordIndexAt holds the current chord through a no-chord gap", () => {
