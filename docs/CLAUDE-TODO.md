@@ -28,6 +28,22 @@ The two items below are no longer out of scope - they shipped in Wave 2:
   which breaks auto-fetch until the `ugHeaders()` signing is updated. Paste is the
   permanent fallback. There is no SSRF surface: one hardcoded host, numeric id or
   encoded title only - no user-supplied URL.
+
+  Operational realities found while testing the live site (all handled in code):
+  - SIGNING CLOCK SKEW: the key embeds the UTC hour, but UG's server clock runs
+    ~1h behind, so a fixed-UTC-hour key gets 498 "token invalid" at the day/hour
+    boundary (took all auto-fetch down at 00:xx UTC). `apiGet` now retries adjacent
+    hours (`HOUR_OFFSETS = [0, -1, 1]`) on a 498. A cleaner future fix is to sync to
+    UG's server-time endpoint instead of guessing.
+  - REGION / LEGAL BLOCKS: UG returns HTTP 451 (Unavailable For Legal Reasons) for
+    some big-label content (e.g. Beyoncé "Halo") to US IPs. Vercel functions default
+    to a US region (iad1), so those songs 451'd in production while working from AU.
+    Fixed by pinning the function to Sydney in `vercel.json` (`"regions": ["syd1"]`),
+    which matches the user's region. A residual 451 (blocked even from syd1) maps to
+    a `region_blocked` error that points to paste.
+  - RESILIENCE: the title path tries the top `MAX_INFO_ATTEMPTS` chord versions, so a
+    single removed/blocked tab no longer fails the whole request. Search 404 and
+    empty results map to `not_found` (404), not a generic upstream error.
 - **Shared parser** - `src/music/parse.ts`. One parser for both fetch and paste:
   decodes entities, strips `[tab]`, reads `[ch]` tags or bare chord lines, splits
   sections, expands `xN` repeats (capped), filters `N.C.`, maps German `H` to `B`,

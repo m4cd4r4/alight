@@ -22,9 +22,14 @@ const API_BASE = "https://api.ultimate-guitar.com/api/v1";
 const UA = "UGT_ANDROID/4.11.1 (Pixel; 8.1.0)";
 const SALT = "createLog()";
 const CHORDS_TYPE = "Chords";
-const TIMEOUT_MS = 8000;
+const REQUEST_BUDGET_MS = 9000; // total upstream budget for one request, under Vercel's function limit
 const MAX_TITLE = 120;
 const MAX_VERSIONS = 6;
+const MAX_INFO_ATTEMPTS = 3; // try the best chord version, then fall back to the next-ranked ones
+const HOUR_OFFSETS = [0, -1, 1]; // tolerate UG server-clock skew when signing (hours, UTC)
+
+// Give the function a little headroom over the upstream budget.
+export const config = { maxDuration: 15 };
 const STANDARD_TUNING = "E A D G B E";
 const BLOCKED_MSG =
   "Ultimate Guitar is not responding right now. Paste the chord sheet to keep playing.";
@@ -95,10 +100,14 @@ function isAbortError(err: unknown): boolean {
   return err instanceof Error && err.name === "AbortError";
 }
 
-/** Build UG mobile-API auth headers. The key is valid for the current UTC hour. */
-function ugHeaders(): Record<string, string> {
-  const deviceId = randomBytes(8).toString("hex");
-  const date = new Date().toISOString().slice(0, 13).replace("T", ":"); // YYYY-MM-DD:HH (UTC)
+/**
+ * Build UG mobile-API auth headers for a given hour offset. The key is
+ * md5(deviceId + "YYYY-MM-DD:HH" + salt), where the hour is UTC shifted by
+ * `hourOffset`. UG's server clock is not exactly real UTC (observed ~1h behind
+ * at the day boundary), so we retry adjacent hours - see HOUR_OFFSETS / apiGet.
+ */
+function ugHeaders(deviceId: string, hourOffset: number): Record<string, string> {
+  const date = new Date(Date.now() + hourOffset * 3_600_000).toISOString().slice(0, 13).replace("T", ":");
   const apiKey = createHash("md5").update(deviceId + date + SALT).digest("hex");
   return {
     Accept: "application/json",
@@ -108,27 +117,35 @@ function ugHeaders(): Record<string, string> {
   };
 }
 
-async function apiGet(path: string): Promise<{ status: number; json: unknown }> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
-  try {
-    const res = await fetch(`${API_BASE}${path}`, { headers: ugHeaders(), signal: controller.signal });
+async function apiGet(path: string, signal: AbortSignal): Promise<{ status: number; json: unknown }> {
+  const deviceId = randomBytes(8).toString("hex");
+  let last: { status: number; json: unknown } = { status: 0, json: null };
+  // 498 = "token expired/invalid": the signature hour did not match UG's clock.
+  // Retry adjacent hours before giving up; the common case (offset 0) succeeds first.
+  for (const offset of HOUR_OFFSETS) {
+    const res = await fetch(`${API_BASE}${path}`, { headers: ugHeaders(deviceId, offset), signal });
     let json: unknown = null;
     try {
       json = await res.json();
     } catch {
       json = null;
     }
-    return { status: res.status, json };
-  } finally {
-    clearTimeout(timer);
+    last = { status: res.status, json };
+    if (res.status !== 498) return last;
   }
+  return last;
 }
 
-/** Map an upstream status to a client error, or null when it is a clean 200. */
+/**
+ * Map a non-200 upstream status to a client error; returns true if it sent one.
+ * 404 means "no such song/tab" (not_found); 403/429/498 mean UG is refusing us
+ * (blocked, drop to paste); anything else is a generic upstream error.
+ */
 function upstreamError(res: VercelResponse, status: number): boolean {
   if (status === 200) return false;
-  if (status === 403 || status === 429 || status === 498) {
+  if (status === 404) {
+    fail(res, 404, "not_found", "No chord sheet found for that title.");
+  } else if (status === 403 || status === 429 || status === 498) {
     fail(res, 503, "blocked", BLOCKED_MSG);
   } else {
     fail(res, 502, "upstream_error", "Could not reach Ultimate Guitar.");
@@ -182,13 +199,13 @@ function tabInfoToPayload(json: unknown): Omit<ChordsPayload, "versions"> | null
 
 // ---- Route handlers ----------------------------------------------------------
 
-async function handleTitle(res: VercelResponse, raw: string): Promise<void> {
+async function handleTitle(res: VercelResponse, raw: string, signal: AbortSignal): Promise<void> {
   const title = raw.trim();
   if (!title || title.length > MAX_TITLE) {
     return fail(res, 400, "bad_request", `Title must be 1 to ${MAX_TITLE} characters.`);
   }
 
-  const search = await apiGet(`/tab/search?title=${encodeURIComponent(title)}&page=1`);
+  const search = await apiGet(`/tab/search?title=${encodeURIComponent(title)}&page=1`, signal);
   if (upstreamError(res, search.status)) return;
   const tabs = (search.json as UgSearch | null)?.tabs;
   if (!Array.isArray(tabs)) {
@@ -196,16 +213,41 @@ async function handleTitle(res: VercelResponse, raw: string): Promise<void> {
   }
 
   const chords = tabs.filter(isChordTab).sort(byScoreDesc);
-  const best = chords[0];
-  if (!best) return fail(res, 404, "not_found", "No chord sheet found for that title.");
+  if (chords.length === 0) return fail(res, 404, "not_found", "No chord sheet found for that title.");
 
-  const info = await apiGet(`/tab/info?tab_id=${best.id}&tab_access_type=public`);
-  if (upstreamError(res, info.status)) return;
-  const payload = tabInfoToPayload(info.json);
-  if (!payload) return fail(res, 502, "parse_error", "The chord sheet had no readable content.");
+  // Load the best version; if an individual tab fails to load (a removed or
+  // restricted tab still listed in search), fall back to the next-ranked one
+  // rather than failing the whole request.
+  let payload: Omit<ChordsPayload, "versions"> | null = null;
+  let chosenId = -1;
+  let sawLegalBlock = false;
+  for (const tab of chords.slice(0, MAX_INFO_ATTEMPTS)) {
+    const info = await apiGet(`/tab/info?tab_id=${tab.id}&tab_access_type=public`, signal);
+    if (info.status === 403 || info.status === 429 || info.status === 498) {
+      return fail(res, 503, "blocked", BLOCKED_MSG); // UG is refusing us; do not hammer
+    }
+    if (info.status === 200) {
+      const candidate = tabInfoToPayload(info.json);
+      if (candidate) {
+        payload = candidate;
+        chosenId = tab.id as number;
+        break;
+      }
+    }
+    // 451 = Unavailable For Legal Reasons: UG blocks this content from the
+    // server's region (some labels are takedown-blocked in the US).
+    if (info.status === 451) sawLegalBlock = true;
+    console.warn(`chords: skipping tab ${tab.id} for "${title}" (info status ${info.status})`);
+  }
+  if (!payload) {
+    if (sawLegalBlock) {
+      return fail(res, 451, "region_blocked", "This song is not available from the server's region. Paste the chord sheet to keep playing.");
+    }
+    return fail(res, 502, "upstream_error", "Could not load a chord sheet for that title.");
+  }
 
   const versions = chords
-    .filter((t) => t.id !== best.id)
+    .filter((t) => t.id !== chosenId)
     .slice(0, MAX_VERSIONS)
     .map(toVersionRef);
 
@@ -213,12 +255,12 @@ async function handleTitle(res: VercelResponse, raw: string): Promise<void> {
   res.status(200).json({ ...payload, versions } satisfies ChordsPayload);
 }
 
-async function handleId(res: VercelResponse, raw: string): Promise<void> {
+async function handleId(res: VercelResponse, raw: string, signal: AbortSignal): Promise<void> {
   if (!/^\d{1,12}$/.test(raw)) {
     return fail(res, 400, "bad_request", "Invalid tab id.");
   }
 
-  const info = await apiGet(`/tab/info?tab_id=${raw}&tab_access_type=public`);
+  const info = await apiGet(`/tab/info?tab_id=${raw}&tab_access_type=public`, signal);
   if (upstreamError(res, info.status)) return;
   const payload = tabInfoToPayload(info.json);
   if (!payload) return fail(res, 502, "parse_error", "The chord sheet had no readable content.");
@@ -241,14 +283,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   const id = firstParam(req.query.id);
   const title = firstParam(req.query.title);
 
+  // One shared deadline across all upstream calls, so the fallback loop can
+  // never exceed the function's time budget.
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_BUDGET_MS);
   try {
-    if (id) return await handleId(res, id);
-    if (title) return await handleTitle(res, title);
+    if (id) return await handleId(res, id, controller.signal);
+    if (title) return await handleTitle(res, title, controller.signal);
     return fail(res, 400, "bad_request", "Provide a ?title= to search or an ?id= to load.");
   } catch (err) {
     if (isAbortError(err)) {
       return fail(res, 504, "timeout", "Ultimate Guitar took too long to respond.");
     }
+    console.error("chords: upstream fetch threw", err instanceof Error ? `${err.name}: ${err.message}` : String(err));
     return fail(res, 502, "upstream_error", "Could not reach Ultimate Guitar.");
+  } finally {
+    clearTimeout(timer);
   }
 }
