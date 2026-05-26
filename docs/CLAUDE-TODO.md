@@ -50,6 +50,52 @@ The two items below are no longer out of scope - they shipped in Wave 2:
   transposes by capo, collapses consecutive duplicates. Outputs `Song.chords:
   string[]`, which `voiceSong()` consumes. Tested in `parse.test.ts`.
 
+## Built in Wave 3 (feat/play-along)
+
+Synced lyrics + animated play-along. No longer out of scope:
+
+- **Timeline contract + mapper** - `src/music/timeline.ts`. The shape the Play view
+  consumes (timed chords, synced lyric lines, beats), decoupled from ChordMini.
+  `fromChordMini()` maps Harte labels ("C:maj"->"C", "G:maj/3"->"G/B",
+  "B:hdim7"->"Bm7b5") to tonal symbols, collapses frame-repeats, drops N/X.
+  Pure selectors `chordIndexAt`/`lyricIndexAt` drive the clock. Tested
+  (`timeline.test.ts`, incl. a real captured backend response).
+- **LRC parser** - `src/music/lrc.ts`. `[mm:ss.xx]` -> `{time,text}`, used when a
+  source gives raw LRC (LRCLIB's native shape). Tested (`lrc.test.ts`).
+- **Animated play-along** - `src/play/usePlayAlong.ts` + `LyricsPanel`,
+  `PlayView`, `Transport`. Timed mode (rAF clock) lights keys + highlights lyrics
+  in sync with a "next chord lands in" cue; manual mode keeps space/arrow
+  stepping + tap-tempo auto-advance. First-run demo (public-domain Amazing Grace).
+- **Analyze proxy + ingest** - `api/analyze.ts` (token-gated; YouTube URL or
+  upload -> chords + beats + lyrics). Self-hosted lean ChordMini backend on the
+  VPS (`deploy/chordmini/`), token-gated at `chordmini.donnacha.app`.
+- **App gate** - simple admin password (`alight2026`) screen + `x-alight-gate`
+  server check on `api/analyze.ts` (Vercel Password Protection needs a paid
+  add-on, so gated in-app). See the residual-risk follow-up below.
+
+## Deferred from Wave 3 / follow-ups
+
+- **Gate secret hardening (security review, HIGH-but-accepted)** - the server-side
+  `x-alight-gate` secret defaults to the same `alight2026` shipped in the client
+  bundle, so without a distinct `ALIGHT_PASSWORD` env it is extractable from the
+  JS. Accepted for now: it is a deliberate simple deterrent for a personal tool,
+  and the protected synced lyrics are themselves freely available from LRCLIB's
+  public API, so nothing secret is exposed. Upgrade path: set a distinct random
+  `ALIGHT_PASSWORD` on Vercel (server-only) so the analyze gate becomes a real
+  secret, independent of the client password.
+- **Word-level (per-syllable) lyric sync** - line-level only was the target; LRCLIB
+  gives line-level timing. Per-word karaoke is a later enhancement.
+- **Upload size** - the upload fallback goes through the Vercel function, capped at
+  ~4.4MB (Vercel body limit), so only short clips. Longer uploads would need a
+  direct browser->backend path (signed URL) to bypass the function body limit.
+- **Audio acquisition robustness** - YouTube can rate-limit/bot-check a VPS IP over
+  time; if downloads start failing, the upload fallback covers it. A cookies/PO-token
+  yt-dlp setup is the heavier fix if it becomes a problem.
+- **Backend lifecycle** - the ChordMini container is `--restart unless-stopped` on
+  the VPS. If abandoning Alight, tear it down: `docker rm -f chordmini-alight`,
+  `docker rmi chordmini-lean`, remove `/etc/nginx/conf.d/chordmini.conf` + the
+  `chordmini.donnacha.app` DNS record + cert. Recon clone at `/opt/chordmini-recon`.
+
 ## Deferred from Wave 2 (seams for Wave 3)
 
 - **Paste capo field** - the paste box assumes capo 0 (chords as written), matching
