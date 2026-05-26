@@ -1,9 +1,16 @@
 import { useEffect, useState } from "react";
 import { LoadView } from "./components/LoadView.tsx";
 import { PlayView } from "./components/PlayView.tsx";
+import type { Timeline } from "./music/timeline.ts";
 import type { Song } from "./music/types.ts";
 
 type Theme = "light" | "dark";
+
+/** A loaded song, optionally with a play-along timeline (analysis present). */
+interface Loaded {
+  song: Song;
+  timeline: Timeline | null;
+}
 
 function initialTheme(): Theme {
   try {
@@ -17,7 +24,7 @@ function initialTheme(): Theme {
 // dark-mode toggle works on both views, stays put across the view switch, and
 // persists across reloads.
 export default function App() {
-  const [song, setSong] = useState<Song | null>(null);
+  const [loaded, setLoaded] = useState<Loaded | null>(null);
   const [theme, setTheme] = useState<Theme>(initialTheme);
 
   useEffect(() => {
@@ -31,8 +38,18 @@ export default function App() {
 
   const onToggleTheme = () => setTheme((t) => (t === "light" ? "dark" : "light"));
 
-  if (song) {
-    return <PlayView song={song} onBack={() => setSong(null)} theme={theme} onToggleTheme={onToggleTheme} />;
+  const onLoad = (song: Song, timeline: Timeline | null = null) => setLoaded({ song, timeline });
+
+  if (loaded) {
+    return (
+      <PlayView
+        song={loaded.song}
+        timeline={loaded.timeline}
+        onBack={() => setLoaded(null)}
+        theme={theme}
+        onToggleTheme={onToggleTheme}
+      />
+    );
   }
-  return <LoadView onLoad={setSong} theme={theme} onToggleTheme={onToggleTheme} />;
+  return <LoadView onLoad={onLoad} theme={theme} onToggleTheme={onToggleTheme} />;
 }

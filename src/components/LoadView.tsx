@@ -4,9 +4,13 @@
 // for when the fetch is blocked or the song is not found.
 
 import { type FormEvent, useState } from "react";
+import { demoSong, demoTimeline } from "../data/demo.ts";
 import { parse } from "../music/parse.ts";
+import type { Timeline } from "../music/timeline.ts";
 import type { Song } from "../music/types.ts";
 import { ThemeToggle } from "./ThemeToggle.tsx";
+
+type LoadHandler = (song: Song, timeline?: Timeline | null) => void;
 
 interface VersionRef {
   id: number;
@@ -129,7 +133,7 @@ function Alternates({
   );
 }
 
-function PasteFallback({ onLoad }: { onLoad: (song: Song) => void }) {
+function PasteFallback({ onLoad }: { onLoad: LoadHandler }) {
   const sample =
     "[Verse]\nC          G/B        Am         F\nWords go on this line, chords sit above\nC          G/B        Am         F\nThe parser reads the chord line, skips the words\n\n[Chorus]\nC               G\nAm                F";
   const [text, setText] = useState("");
@@ -181,7 +185,7 @@ export function LoadView({
   theme,
   onToggleTheme,
 }: {
-  onLoad: (song: Song) => void;
+  onLoad: LoadHandler;
   theme: "light" | "dark";
   onToggleTheme: () => void;
 }) {
@@ -239,6 +243,9 @@ export function LoadView({
           <div className="heading">
             <h1>Find a song</h1>
             <div className="sub">Type a title and press Enter. Or paste a chord sheet on the right.</div>
+            <button type="button" className="demo-link" onClick={() => onLoad(demoSong, demoTimeline)}>
+              New here? Play the sample - Amazing Grace
+            </button>
           </div>
 
           {state.status === "error" ? <FetchBanner message={state.message} /> : null}

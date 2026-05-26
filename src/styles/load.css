@@ -58,6 +58,21 @@
   font-size: 14px;
   color: var(--ink-tertiary);
 }
+.load-stage .heading .demo-link {
+  align-self: flex-start;
+  appearance: none;
+  background: none;
+  border: 0;
+  padding: 0;
+  margin-top: 4px;
+  font-family: var(--font-text);
+  font-size: 13px;
+  color: var(--hand-right);
+  cursor: pointer;
+  border-bottom: 1px solid color-mix(in oklch, var(--hand-right) 40%, transparent);
+}
+.load-stage .heading .demo-link:hover { color: var(--ink-primary); }
+.load-stage .heading .demo-link:focus-visible { outline: 2px solid var(--ink-primary); outline-offset: 2px; }
 
 .search-field {
   display: flex;

@@ -11,5 +11,6 @@ coverage/
 .DS_Store
 Thumbs.db
 
-# Local browser-verification screenshots (regenerated on demand, not committed)
+# Local browser-verification screenshots + scripts (regenerated on demand, not committed)
 docs/verification/
+verify-shots/
