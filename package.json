@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "test": "node --test src/music/parse.test.ts",
+    "test": "node --test src/music/parse.test.ts src/music/lrc.test.ts src/music/timeline.test.ts",
     "typecheck:api": "tsc --noEmit -p api/tsconfig.json"
   },
   "dependencies": {
