@@ -6,6 +6,11 @@
 #
 # Cookies: drop a Netscape cookies.txt at /opt/chordmini-recon/cookies/youtube.txt
 # (exported from a logged-in YouTube session). Empty/absent -> runs without them.
+#
+# YT_PROXY: SOCKS5 endpoint that egresses through a residential IP. See
+# tunnel-up.sh - we run `ssh -R 172.17.0.1:1080 root@VPS` from Macdara's Perth
+# workstation, then point yt-dlp at it. Without this, popular videos return
+# SABR-only responses from the VPS IP.
 set -e
 PORT=$(cat /opt/chordmini-recon/.alight_port)
 mkdir -p /opt/chordmini-recon/cookies
@@ -16,4 +21,7 @@ docker run -d --name chordmini-alight --restart unless-stopped \
   -p 127.0.0.1:"$PORT":8080 \
   --memory=4g --memory-swap=4g --cpus=2 \
   -v /opt/chordmini-recon/cookies:/cookies \
+  -v /opt/chordmini-recon/python_backend/alight_ingest.py:/app/alight_ingest.py:ro \
+  -v /opt/chordmini-recon/python_backend/alight_app.py:/app/alight_app.py:ro \
+  -e YT_PROXY="${YT_PROXY:-socks5h://172.17.0.1:1080}" \
   chordmini-lean:latest

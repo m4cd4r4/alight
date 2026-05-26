@@ -1,24 +1,8 @@
-// Browser-side YouTube audio extraction.
-//
-// YouTube has SABR-locked the VPS IP, so server-side yt-dlp returns only
-// storyboard images for popular videos. The way out (same trick chordmini.me
-// uses in production) is to run the extraction in the user's browser via the
-// Vercel CORS relay - Vercel's IP pool is treated more leniently than a
-// single static datacentre IP. Once we have the audio bytes in the browser,
-// the existing /api/analyze base64-upload path takes over.
-
-import { Innertube, UniversalCache } from "youtubei.js/web";
-import { storedGate } from "../gate.ts";
-
-const YT_HOSTS_RE = /^https?:\/\/([\w-]+\.)*(youtube\.com|googlevideo\.com|ytimg\.com|ggpht\.com|youtube-nocookie\.com)/i;
-
-export interface YoutubeExtraction {
-  audio: Uint8Array;
-  ext: "m4a" | "webm";
-  title: string;
-  artist: string;
-  duration: number;
-}
+// Tiny YouTube URL helper. The actual extraction happens server-side via
+// yt-dlp on the ChordMini VPS (egressing through a residential SOCKS tunnel
+// to dodge SABR - see deploy/chordmini/alight_ingest.py and
+// docs/play-along/yt-tunnel.md). The browser only needs to validate the link
+// shape before posting it to /api/analyze.
 
 /** Pull the 11-char video id from a watch / youtu.be / shorts URL. */
 export function videoIdFromUrl(input: string): string | null {
@@ -38,108 +22,4 @@ export function videoIdFromUrl(input: string): string | null {
   } catch {
     return null;
   }
-}
-
-/**
- * Route every YouTube / googlevideo call through our gated CORS relay. The
- * relay overrides User-Agent + Referer server-side so YouTube sees a real
- * browser, and forwards Innertube auth headers (X-YouTube-Client-*) untouched.
- */
-async function proxiedFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
-  // youtubei.js sometimes calls fetch with a Request object instead of (url, init).
-  // We must lift method, headers and body off the Request - otherwise POSTs (notably
-  // the Innertube /v1/player call) silently degrade to GETs and YouTube returns 405.
-  const isRequest = typeof Request !== "undefined" && input instanceof Request;
-  const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
-  if (!YT_HOSTS_RE.test(url)) return fetch(input, init);
-
-  const reqHeaders = isRequest ? input.headers : new Headers();
-  const headers = new Headers(reqHeaders);
-  if (init?.headers) new Headers(init.headers).forEach((v, k) => headers.set(k, v));
-  headers.set("x-alight-gate", storedGate());
-
-  const method = (init?.method || (isRequest ? input.method : "GET")).toUpperCase();
-  const safeInit: RequestInit = { headers, method };
-  if (method !== "GET" && method !== "HEAD") {
-    // Prefer the explicit init.body; fall back to the Request's body stream.
-    if (init && "body" in init && init.body != null) safeInit.body = init.body;
-    else if (isRequest && input.body) safeInit.body = await input.arrayBuffer();
-  }
-  return fetch(`/api/yt-proxy?url=${encodeURIComponent(url)}`, safeInit);
-}
-
-function pickExt(mime: string | undefined): "m4a" | "webm" {
-  return mime && /webm|opus/i.test(mime) ? "webm" : "m4a";
-}
-
-// YouTube's default WEB client has been SABR-locked for some time - it returns
-// no streamingData. The TV / IOS / MWEB clients still serve real adaptive
-// formats. We try them in order, falling back through the list if a client
-// returns no playable audio. This is the same fallback chain chordmini.me and
-// other browser extractors use in production.
-const CLIENT_CHAIN: Array<"TV" | "IOS" | "MWEB" | "WEB_EMBEDDED" | "ANDROID"> = [
-  "TV",
-  "IOS",
-  "MWEB",
-  "WEB_EMBEDDED",
-  "ANDROID",
-];
-
-interface YtInfo {
-  basic_info?: { title?: string; author?: string; duration?: number };
-  streaming_data?: { adaptive_formats?: unknown[]; formats?: unknown[] };
-  chooseFormat: (opts: { type: string; quality: string }) => {
-    mime_type?: string;
-    decipher?: (player: unknown) => Promise<string> | string;
-  } | null;
-}
-
-export async function extractYoutubeAudio(input: string): Promise<YoutubeExtraction> {
-  const videoId = videoIdFromUrl(input);
-  if (!videoId) throw new Error("That does not look like a YouTube link.");
-
-  const yt = await Innertube.create({ fetch: proxiedFetch, cache: new UniversalCache(false) });
-
-  let info: YtInfo | null = null;
-  let lastErr: unknown = null;
-  for (const client of CLIENT_CHAIN) {
-    try {
-      const candidate = (await yt.getInfo(videoId, client as never)) as unknown as YtInfo;
-      const hasStreams =
-        candidate?.streaming_data &&
-        ((candidate.streaming_data.adaptive_formats?.length ?? 0) > 0 ||
-          (candidate.streaming_data.formats?.length ?? 0) > 0);
-      if (hasStreams) {
-        info = candidate;
-        break;
-      }
-    } catch (e) {
-      lastErr = e;
-    }
-  }
-  if (!info) {
-    const msg = lastErr instanceof Error ? lastErr.message : "YouTube returned no playable audio.";
-    throw new Error(msg);
-  }
-
-  const format = info.chooseFormat({ type: "audio", quality: "best" });
-  if (!format || typeof format.decipher !== "function") {
-    throw new Error("YouTube returned no playable audio format.");
-  }
-  const streamUrl = await format.decipher(yt.session.player);
-  if (!streamUrl) throw new Error("YouTube returned no playable audio format.");
-
-  const audioResp = await proxiedFetch(streamUrl);
-  if (!audioResp.ok) throw new Error(`The audio download failed (HTTP ${audioResp.status}).`);
-  const audio = new Uint8Array(await audioResp.arrayBuffer());
-  if (audio.byteLength < 1024) throw new Error("The downloaded audio was empty.");
-
-  const meta = info.basic_info || {};
-  return {
-    audio,
-    ext: pickExt(format.mime_type),
-    title: (meta.title || "").trim(),
-    artist: (meta.author || "").trim(),
-    duration: Number(meta.duration) || 0,
-  };
 }

@@ -7,9 +7,9 @@ import { type FormEvent, useRef, useState } from "react";
 import { storedGate } from "../gate.ts";
 import { fromChordMini, timelineSymbols, type ChordMiniAnalysis, type Timeline } from "../music/timeline.ts";
 import type { Song } from "../music/types.ts";
-import { extractYoutubeAudio, videoIdFromUrl } from "../youtube/extract.ts";
+import { videoIdFromUrl } from "../youtube/extract.ts";
 
-type Stage = "idle" | "downloading" | "analysing";
+type Stage = "idle" | "analysing";
 
 type LoadHandler = (song: Song, timeline?: Timeline | null) => void;
 
@@ -81,24 +81,16 @@ export function AnalyzeInput({ onLoad }: { onLoad: LoadHandler }) {
       return;
     }
     setError(null);
+    setStage("analysing");
     try {
-      // Phase 1: extract audio in the browser (the user's residential IP, so
-      // YouTube does not SABR-lock us as it does the VPS).
-      setStage("downloading");
-      const yt = await extractYoutubeAudio(link);
-
-      // Phase 2: ship the bytes through the existing gated upload path.
-      // Vercel's 4.5MB body limit (~3.2MB raw after base64 inflation) caps song length.
-      if (yt.audio.byteLength > 3_200_000) {
-        setError("That song's audio is too large to ship to the analyser (about 3MB max). Try a shorter clip.");
-        return;
-      }
-      setStage("analysing");
-      const audioBase64 = bytesToBase64(yt.audio);
+      // The server-side path: /api/analyze proxies to the ChordMini backend,
+      // which calls yt-dlp through the residential SOCKS tunnel (see
+      // deploy/chordmini/alight_ingest.py + docs/play-along/yt-tunnel.md).
+      // YouTube serves real audio formats only to the Perth IP, not the VPS.
       const res = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-alight-gate": storedGate() },
-        body: JSON.stringify({ audioBase64, ext: yt.ext, title: yt.title, artist: yt.artist }),
+        body: JSON.stringify({ youtubeUrl: link }),
       });
       if (!res.ok) {
         setError(await readError(res));
@@ -154,13 +146,11 @@ export function AnalyzeInput({ onLoad }: { onLoad: LoadHandler }) {
           aria-label="YouTube link"
         />
         <button type="submit" className="btn-primary" disabled={busy || url.trim().length === 0}>
-          {stage === "downloading" ? "Downloading" : stage === "analysing" ? "Analysing" : "Play along"}
+          {stage === "analysing" ? "Analysing" : "Play along"}
         </button>
       </form>
       <div className="analyze-sub">
-        {stage === "downloading" ? (
-          <span className="analyze-progress"><span className="spinner" />Fetching the audio in your browser - this takes a moment.</span>
-        ) : stage === "analysing" ? (
+        {stage === "analysing" ? (
           <span className="analyze-progress"><span className="spinner" />Analysing the audio - this can take a minute or two.</span>
         ) : (
           <>

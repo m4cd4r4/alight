@@ -50,12 +50,23 @@ RUN grep -v -E '^(spleeter|typer|tensorflow|torch|torchaudio|norbert)' requireme
 # Stage 2: runtime
 FROM python:3.10-slim AS runtime
 RUN apt-get update && apt-get install -y \
-    curl libsndfile1 ffmpeg \
+    curl libsndfile1 ffmpeg unzip ca-certificates \
     && rm -rf /var/lib/apt/lists/* && apt-get clean
+
+# Deno - yt-dlp uses it to solve the YouTube player JS challenges (sig + n).
+# Without a JS runtime in PATH, yt-dlp only returns SABR/storyboard formats.
+RUN curl -fsSL https://deno.land/install.sh | DENO_INSTALL=/usr/local sh -s -- -y \
+    && /usr/local/bin/deno --version
+
 WORKDIR /app
 
 COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
+
+# yt-dlp moves fast; the requirements.txt-pinned version (~2025.04) does not
+# know about the new player JS challenges. Upgrade to the latest stable here.
+RUN pip install --no-cache-dir -U yt-dlp \
+    && yt-dlp --version
 
 # Fail the build early if the legacy pkg_resources path madmom needs is gone.
 RUN python -c "import pkg_resources; import madmom; print('madmom runtime import ok', getattr(madmom, '__version__', 'unknown'))"
