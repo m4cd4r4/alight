@@ -7,6 +7,9 @@ import { type FormEvent, useRef, useState } from "react";
 import { storedGate } from "../gate.ts";
 import { fromChordMini, timelineSymbols, type ChordMiniAnalysis, type Timeline } from "../music/timeline.ts";
 import type { Song } from "../music/types.ts";
+import { extractYoutubeAudio, videoIdFromUrl } from "../youtube/extract.ts";
+
+type Stage = "idle" | "downloading" | "analysing";
 
 type LoadHandler = (song: Song, timeline?: Timeline | null) => void;
 
@@ -55,9 +58,10 @@ async function readError(res: Response): Promise<string> {
 
 export function AnalyzeInput({ onLoad }: { onLoad: LoadHandler }) {
   const [url, setUrl] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [stage, setStage] = useState<Stage>("idle");
   const [error, setError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const busy = stage !== "idle";
 
   async function finish(data: AnalyzeResponse) {
     const result = songFromAnalysis(data);
@@ -72,23 +76,39 @@ export function AnalyzeInput({ onLoad }: { onLoad: LoadHandler }) {
     e.preventDefault();
     const link = url.trim();
     if (!link || busy) return;
+    if (!videoIdFromUrl(link)) {
+      setError("That does not look like a YouTube link.");
+      return;
+    }
     setError(null);
-    setBusy(true);
     try {
+      // Phase 1: extract audio in the browser (the user's residential IP, so
+      // YouTube does not SABR-lock us as it does the VPS).
+      setStage("downloading");
+      const yt = await extractYoutubeAudio(link);
+
+      // Phase 2: ship the bytes through the existing gated upload path.
+      // Vercel's 4.5MB body limit (~3.2MB raw after base64 inflation) caps song length.
+      if (yt.audio.byteLength > 3_200_000) {
+        setError("That song's audio is too large to ship to the analyser (about 3MB max). Try a shorter clip.");
+        return;
+      }
+      setStage("analysing");
+      const audioBase64 = bytesToBase64(yt.audio);
       const res = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-alight-gate": storedGate() },
-        body: JSON.stringify({ youtubeUrl: link }),
+        body: JSON.stringify({ audioBase64, ext: yt.ext, title: yt.title, artist: yt.artist }),
       });
       if (!res.ok) {
         setError(await readError(res));
         return;
       }
       await finish((await res.json()) as AnalyzeResponse);
-    } catch {
-      setError("Could not reach the analysis service.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not fetch audio for that link.");
     } finally {
-      setBusy(false);
+      setStage("idle");
     }
   }
 
@@ -99,13 +119,14 @@ export function AnalyzeInput({ onLoad }: { onLoad: LoadHandler }) {
       setError("That file is too large (about 3MB max here). Try a shorter clip or a lower-bitrate file.");
       return;
     }
-    setBusy(true);
+    setStage("analysing");
     try {
+      const ext = (file.name.match(/\.([\w]+)$/)?.[1] || "mp3").toLowerCase();
       const audioBase64 = bytesToBase64(new Uint8Array(await file.arrayBuffer()));
       const res = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-alight-gate": storedGate() },
-        body: JSON.stringify({ audioBase64, title: file.name.replace(/\.[^.]+$/, ""), artist: "" }),
+        body: JSON.stringify({ audioBase64, ext, title: file.name.replace(/\.[^.]+$/, ""), artist: "" }),
       });
       if (!res.ok) {
         setError(await readError(res));
@@ -115,7 +136,7 @@ export function AnalyzeInput({ onLoad }: { onLoad: LoadHandler }) {
     } catch {
       setError("Could not reach the analysis service.");
     } finally {
-      setBusy(false);
+      setStage("idle");
     }
   }
 
@@ -133,12 +154,14 @@ export function AnalyzeInput({ onLoad }: { onLoad: LoadHandler }) {
           aria-label="YouTube link"
         />
         <button type="submit" className="btn-primary" disabled={busy || url.trim().length === 0}>
-          {busy ? "Analysing" : "Play along"}
+          {stage === "downloading" ? "Downloading" : stage === "analysing" ? "Analysing" : "Play along"}
         </button>
       </form>
       <div className="analyze-sub">
-        {busy ? (
-          <span className="analyze-progress"><span className="spinner" />Downloading and analysing - this takes a minute or two.</span>
+        {stage === "downloading" ? (
+          <span className="analyze-progress"><span className="spinner" />Fetching the audio in your browser - this takes a moment.</span>
+        ) : stage === "analysing" ? (
+          <span className="analyze-progress"><span className="spinner" />Analysing the audio - this can take a minute or two.</span>
         ) : (
           <>
             Chords, beats and lyrics in time.{" "}
