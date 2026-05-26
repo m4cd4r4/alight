@@ -239,6 +239,8 @@
 }
 .pck-transport button.primary:hover { background: color-mix(in oklch, var(--ink-primary) 88%, white); }
 .pck-transport button svg { width: 18px; height: 18px; }
+.pck-transport button:disabled { opacity: 0.4; cursor: not-allowed; }
+.pck-transport button.primary:disabled:hover { background: var(--ink-primary); }
 
 /* ============================================================
    Toggles (segmented and switch)

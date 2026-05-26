@@ -1,5 +1,7 @@
-// Back / Next stepping. Spacebar and arrow keys drive the same handlers
-// (wired in PlayView). Play/auto-advance is a later worktree (tied to audio).
+// Back / Play-pause / Next stepping. Spacebar and arrow keys drive prev/next
+// (wired in PlayView). Play/pause toggles the play-along clock (timed mode) or
+// the tap-tempo auto-advance (manual mode); it is disabled until there is a
+// tempo to play to.
 
 function IconPrev() {
   return (
@@ -17,18 +19,48 @@ function IconNext() {
   );
 }
 
+function IconPlay() {
+  return (
+    <svg viewBox="0 0 24 24" width="20" height="20">
+      <path d="M8 5 L19 12 L8 19 Z" fill="currentColor" />
+    </svg>
+  );
+}
+
+function IconPause() {
+  return (
+    <svg viewBox="0 0 24 24" width="20" height="20">
+      <rect x="7" y="5" width="3.5" height="14" fill="currentColor" />
+      <rect x="13.5" y="5" width="3.5" height="14" fill="currentColor" />
+    </svg>
+  );
+}
+
 interface TransportProps {
   onPrev: () => void;
   onNext: () => void;
+  isPlaying: boolean;
+  canPlay: boolean;
+  onTogglePlay: () => void;
 }
 
-export function Transport({ onPrev, onNext }: TransportProps) {
+export function Transport({ onPrev, onNext, isPlaying, canPlay, onTogglePlay }: TransportProps) {
   return (
     <div className="pck-transport" role="group" aria-label="Transport">
       <button type="button" onClick={onPrev} aria-label="Previous chord">
         <IconPrev />
       </button>
-      <button type="button" className="primary" onClick={onNext} aria-label="Next chord">
+      <button
+        type="button"
+        className="primary"
+        onClick={onTogglePlay}
+        disabled={!canPlay}
+        aria-pressed={isPlaying}
+        aria-label={isPlaying ? "Pause" : "Play"}
+      >
+        {isPlaying ? <IconPause /> : <IconPlay />}
+      </button>
+      <button type="button" onClick={onNext} aria-label="Next chord">
         <IconNext />
       </button>
     </div>
