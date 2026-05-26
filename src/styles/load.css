@@ -121,6 +121,55 @@
 .link-btn:hover { color: var(--ink-primary); }
 .link-btn:disabled { opacity: 0.5; cursor: default; }
 
+/* Admin gate screen */
+.gate-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 48px;
+  box-sizing: border-box;
+}
+.gate-topbar { display: flex; justify-content: flex-end; padding: 28px 0 0; }
+.gate-stage {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  padding-bottom: 64px;
+}
+.gate-stage .wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--ink-primary);
+}
+.gate-stage .wordmark-mark { display: block; height: 34px; width: auto; }
+.gate-stage .wordmark-name {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 400;
+  letter-spacing: -0.012em;
+  line-height: 1;
+}
+.gate-form { display: flex; gap: 10px; }
+.gate-form input {
+  width: 220px;
+  background: var(--surface-sunken);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-1);
+  padding: 10px 14px;
+  font-family: var(--font-text);
+  font-size: 15px;
+  color: var(--ink-primary);
+}
+.gate-form input:focus-visible { outline: 2px solid var(--ink-primary); outline-offset: 1px; }
+.gate-form input[aria-invalid="true"] { border-color: var(--hand-right); }
+.gate-error { font-family: var(--font-text); font-size: 13px; color: var(--hand-right); }
+
 .search-field {
   display: flex;
   align-items: center;

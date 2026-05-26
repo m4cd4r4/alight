@@ -4,6 +4,7 @@
 // Play view animates. Analysis runs server-side and takes a minute or two.
 
 import { type FormEvent, useRef, useState } from "react";
+import { storedGate } from "../gate.ts";
 import { fromChordMini, timelineSymbols, type ChordMiniAnalysis, type Timeline } from "../music/timeline.ts";
 import type { Song } from "../music/types.ts";
 
@@ -66,7 +67,7 @@ export function AnalyzeInput({ onLoad }: { onLoad: LoadHandler }) {
     try {
       const res = await fetch("/api/analyze", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-alight-gate": storedGate() },
         body: JSON.stringify({ youtubeUrl: link }),
       });
       if (!res.ok) {
@@ -89,7 +90,7 @@ export function AnalyzeInput({ onLoad }: { onLoad: LoadHandler }) {
       const qs = new URLSearchParams({ title: file.name.replace(/\.[^.]+$/, ""), artist: "" });
       const res = await fetch(`/api/analyze?${qs.toString()}`, {
         method: "POST",
-        headers: { "Content-Type": file.type || "audio/mpeg" },
+        headers: { "Content-Type": file.type || "audio/mpeg", "x-alight-gate": storedGate() },
         body: file,
       });
       if (!res.ok) {
