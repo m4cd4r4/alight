@@ -72,14 +72,56 @@ function pickExt(mime: string | undefined): "m4a" | "webm" {
   return mime && /webm|opus/i.test(mime) ? "webm" : "m4a";
 }
 
+// YouTube's default WEB client has been SABR-locked for some time - it returns
+// no streamingData. The TV / IOS / MWEB clients still serve real adaptive
+// formats. We try them in order, falling back through the list if a client
+// returns no playable audio. This is the same fallback chain chordmini.me and
+// other browser extractors use in production.
+const CLIENT_CHAIN: Array<"TV" | "IOS" | "MWEB" | "WEB_EMBEDDED" | "ANDROID"> = [
+  "TV",
+  "IOS",
+  "MWEB",
+  "WEB_EMBEDDED",
+  "ANDROID",
+];
+
+interface YtInfo {
+  basic_info?: { title?: string; author?: string; duration?: number };
+  streaming_data?: { adaptive_formats?: unknown[]; formats?: unknown[] };
+  chooseFormat: (opts: { type: string; quality: string }) => {
+    mime_type?: string;
+    decipher?: (player: unknown) => Promise<string> | string;
+  } | null;
+}
+
 export async function extractYoutubeAudio(input: string): Promise<YoutubeExtraction> {
   const videoId = videoIdFromUrl(input);
   if (!videoId) throw new Error("That does not look like a YouTube link.");
 
   const yt = await Innertube.create({ fetch: proxiedFetch, cache: new UniversalCache(false) });
-  const info = await yt.getInfo(videoId);
 
-  // chooseFormat picks a single playable audio stream (m4a or webm/opus).
+  let info: YtInfo | null = null;
+  let lastErr: unknown = null;
+  for (const client of CLIENT_CHAIN) {
+    try {
+      const candidate = (await yt.getInfo(videoId, client as never)) as unknown as YtInfo;
+      const hasStreams =
+        candidate?.streaming_data &&
+        ((candidate.streaming_data.adaptive_formats?.length ?? 0) > 0 ||
+          (candidate.streaming_data.formats?.length ?? 0) > 0);
+      if (hasStreams) {
+        info = candidate;
+        break;
+      }
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+  if (!info) {
+    const msg = lastErr instanceof Error ? lastErr.message : "YouTube returned no playable audio.";
+    throw new Error(msg);
+  }
+
   const format = info.chooseFormat({ type: "audio", quality: "best" });
   if (!format || typeof format.decipher !== "function") {
     throw new Error("YouTube returned no playable audio format.");
@@ -92,7 +134,7 @@ export async function extractYoutubeAudio(input: string): Promise<YoutubeExtract
   const audio = new Uint8Array(await audioResp.arrayBuffer());
   if (audio.byteLength < 1024) throw new Error("The downloaded audio was empty.");
 
-  const meta = info.basic_info;
+  const meta = info.basic_info || {};
   return {
     audio,
     ext: pickExt(format.mime_type),
