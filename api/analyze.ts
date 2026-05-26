@@ -24,6 +24,10 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 // this bounds a full-song CPU analysis comfortably.
 export const config = { maxDuration: 300 };
 
+// Admin gate: the same password as the app's gate screen, so synced lyrics
+// cannot be fetched by calling this function directly. Override with
+// ALIGHT_PASSWORD; the default is configured in code (see src/gate.ts).
+const GATE_PASSWORD = process.env.ALIGHT_PASSWORD || "alight2026";
 const CHORD_DETECTOR = "chord-cnn-lstm";
 const BEAT_DETECTOR = "madmom";
 const DOWNLOAD_TIMEOUT_MS = 290_000;
@@ -196,6 +200,9 @@ async function handleUpload(res: VercelResponse, audio: Buffer, title: string, a
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   if (req.method !== "POST") return fail(res, 405, "bad_request", "Use POST.");
+  if (String(req.headers["x-alight-gate"] || "") !== GATE_PASSWORD) {
+    return fail(res, 401, "locked", "This tool is locked.");
+  }
   if (!backendBase() || !process.env.CHORDMINI_TOKEN) {
     return fail(res, 503, "not_configured", "Audio analysis is not configured on this deployment.");
   }
