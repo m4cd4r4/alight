@@ -8,6 +8,7 @@ import { demoSong, demoTimeline } from "../data/demo.ts";
 import { parse } from "../music/parse.ts";
 import type { Timeline } from "../music/timeline.ts";
 import type { Song } from "../music/types.ts";
+import { AnalyzeInput } from "./AnalyzeInput.tsx";
 import { ThemeToggle } from "./ThemeToggle.tsx";
 
 type LoadHandler = (song: Song, timeline?: Timeline | null) => void;
@@ -291,6 +292,9 @@ export function LoadView({
               </div>
             </>
           ) : null}
+
+          <div className="load-divider" />
+          <AnalyzeInput onLoad={onLoad} />
         </div>
 
         <PasteFallback onLoad={onLoad} />
