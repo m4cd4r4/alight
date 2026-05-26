@@ -6,6 +6,7 @@
 import { type FormEvent, useState } from "react";
 import { parse } from "../music/parse.ts";
 import type { Song } from "../music/types.ts";
+import { ThemeToggle } from "./ThemeToggle.tsx";
 
 interface VersionRef {
   id: number;
@@ -57,7 +58,7 @@ function songFromResponse(r: ChordsResponse): Song {
   return parse(r.content, { capo: r.capo, title: r.song, artist: r.artist });
 }
 
-function TopBar() {
+function TopBar({ theme, onToggleTheme }: { theme: "light" | "dark"; onToggleTheme: () => void }) {
   return (
     <header className="topbar">
       <div className="topbar-left">
@@ -74,13 +75,8 @@ function TopBar() {
         </span>
       </div>
       <div className="topbar-right">
-        {/* Songbook / Settings are navigation seams for later views. */}
-        <button type="button" className="icon-btn" title="Songbook" aria-label="Songbook">
-          <svg viewBox="0 0 24 24"><line x1="5" y1="5" x2="5" y2="19" stroke="currentColor" strokeWidth="1.25" /><line x1="9" y1="5" x2="9" y2="19" stroke="currentColor" strokeWidth="1.25" /><path d="M12 5.5 L15.5 4.7 L18.2 18.4 L14.7 19.2 Z" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinejoin="round" /></svg>
-        </button>
-        <button type="button" className="icon-btn" title="Settings" aria-label="Settings">
-          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="2.5" fill="none" stroke="currentColor" strokeWidth="1.25" /><path d="M12 4.5 V6.5 M12 17.5 V19.5 M4.5 12 H6.5 M17.5 12 H19.5 M6.7 6.7 L8.1 8.1 M15.9 15.9 L17.3 17.3 M6.7 17.3 L8.1 15.9 M15.9 8.1 L17.3 6.7" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" /></svg>
-        </button>
+        {/* Songbook / Settings icons land with their Wave 3 features. */}
+        <ThemeToggle theme={theme} onToggle={onToggleTheme} />
       </div>
     </header>
   );
@@ -180,7 +176,15 @@ type SearchState =
   | { status: "not-found" }
   | { status: "error"; message: string };
 
-export function LoadView({ onLoad }: { onLoad: (song: Song) => void }) {
+export function LoadView({
+  onLoad,
+  theme,
+  onToggleTheme,
+}: {
+  onLoad: (song: Song) => void;
+  theme: "light" | "dark";
+  onToggleTheme: () => void;
+}) {
   const [query, setQuery] = useState("");
   const [state, setState] = useState<SearchState>({ status: "idle" });
   const [parseNote, setParseNote] = useState<string | null>(null);
@@ -229,7 +233,7 @@ export function LoadView({ onLoad }: { onLoad: (song: Song) => void }) {
 
   return (
     <div className="load-page">
-      <TopBar />
+      <TopBar theme={theme} onToggleTheme={onToggleTheme} />
       <main className="load-stage">
         <div>
           <div className="heading">

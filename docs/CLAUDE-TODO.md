@@ -74,9 +74,13 @@ The two items below are no longer out of scope - they shipped in Wave 2:
 - **Saved songbook** - library, export/import to file, offline persistence.
 - **Printable one-page sheet** - per-song PDF + single-chord PNG export.
 - **Audio (smplr)** - sampled piano playback, plus the metronome and tap-tempo.
-- **Other views** - Load, Songbook, Settings, Print. The top-bar songbook /
-  print / settings icons are rendered as inert navigation placeholders for
-  visual fidelity; only the theme toggle is wired. Wire them when those views land.
+- **Other views** - Songbook, Settings, Print. The inert top-bar placeholder
+  icons (songbook / print / settings) were REMOVED in Wave 2 follow-up because
+  they did nothing and confused (the settings gear also read as a second "sun"
+  next to the theme toggle). Re-add each icon wired up when its feature lands.
+  The only top-bar control now is the light/dark theme toggle (shared
+  `ThemeToggle`, on both Load and Play, theme owned by `App` and persisted to
+  `localStorage` under `alight:theme`).
 
 ## Controls deferred from the footer
 

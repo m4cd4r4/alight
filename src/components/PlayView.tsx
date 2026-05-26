@@ -9,20 +9,28 @@ import { voiceSong } from "../music/voicing.ts";
 import { ChordLabel } from "./ChordLabel.tsx";
 import { Segmented, ToggleSwitch } from "./Controls.tsx";
 import { Keyboard } from "./Keyboard.tsx";
+import { ThemeToggle } from "./ThemeToggle.tsx";
 import { Transport } from "./Transport.tsx";
-
-type Theme = "light" | "dark";
 
 const VOICING_OPTIONS: { value: Voicing; label: string }[] = [
   { value: "simple", label: "Simple" },
   { value: "full", label: "Full" },
 ];
 
-export function PlayView({ song, onBack }: { song: Song; onBack?: () => void }) {
+export function PlayView({
+  song,
+  onBack,
+  theme,
+  onToggleTheme,
+}: {
+  song: Song;
+  onBack?: () => void;
+  theme: "light" | "dark";
+  onToggleTheme: () => void;
+}) {
   const [idx, setIdx] = useState(0);
   const [voicing, setVoicing] = useState<Voicing>("simple");
   const [fingering, setFingering] = useState(true);
-  const [theme, setTheme] = useState<Theme>("light");
 
   const steps = useMemo(() => voiceSong(song.chords, voicing), [song.chords, voicing]);
   const count = steps.length;
@@ -32,10 +40,6 @@ export function PlayView({ song, onBack }: { song: Song; onBack?: () => void }) 
 
   const goPrev = useCallback(() => setIdx((i) => (i - 1 + count) % count), [count]);
   const goNext = useCallback(() => setIdx((i) => (i + 1) % count), [count]);
-
-  useEffect(() => {
-    document.documentElement.dataset.theme = theme;
-  }, [theme]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -84,29 +88,8 @@ export function PlayView({ song, onBack }: { song: Song; onBack?: () => void }) 
           </div>
         </div>
         <div className="topbar-right">
-          {/* Songbook / Print / Settings are navigation seams for later views; only theme is wired here. */}
-          <button type="button" className="icon-btn" title="Songbook" aria-label="Songbook">
-            <svg viewBox="0 0 24 24"><line x1="5" y1="5" x2="5" y2="19" stroke="currentColor" strokeWidth="1.25" /><line x1="9" y1="5" x2="9" y2="19" stroke="currentColor" strokeWidth="1.25" /><path d="M12 5.5 L15.5 4.7 L18.2 18.4 L14.7 19.2 Z" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinejoin="round" /></svg>
-          </button>
-          <button type="button" className="icon-btn" title="Print this song" aria-label="Print this song">
-            <svg viewBox="0 0 24 24"><rect x="7" y="4" width="10" height="5" fill="none" stroke="currentColor" strokeWidth="1.25" /><path d="M5 9 H19 V16 H17 V20 H7 V16 H5 Z" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinejoin="round" /><line x1="9" y1="14" x2="15" y2="14" stroke="currentColor" strokeWidth="1.25" /></svg>
-          </button>
-          <button
-            type="button"
-            className="icon-btn"
-            title={`Switch to ${theme === "light" ? "dark" : "light"} theme`}
-            aria-label="Toggle theme"
-            onClick={() => setTheme((t) => (t === "light" ? "dark" : "light"))}
-          >
-            {theme === "light" ? (
-              <svg viewBox="0 0 24 24"><path d="M19 14.5 A8 8 0 0 1 9.5 5 A7 7 0 1 0 19 14.5 Z" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinejoin="round" /></svg>
-            ) : (
-              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.5" fill="none" stroke="currentColor" strokeWidth="1.25" /><path d="M12 3 V5 M12 19 V21 M3 12 H5 M19 12 H21 M5.6 5.6 L7 7 M17 17 L18.4 18.4 M5.6 18.4 L7 17 M17 7 L18.4 5.6" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" /></svg>
-            )}
-          </button>
-          <button type="button" className="icon-btn" title="Settings" aria-label="Settings">
-            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="2.5" fill="none" stroke="currentColor" strokeWidth="1.25" /><path d="M12 4.5 V6.5 M12 17.5 V19.5 M4.5 12 H6.5 M17.5 12 H19.5 M6.7 6.7 L8.1 8.1 M15.9 15.9 L17.3 17.3 M6.7 17.3 L8.1 15.9 M15.9 8.1 L17.3 6.7" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" /></svg>
-          </button>
+          {/* Songbook / Print / Settings icons land with their Wave 3 features. */}
+          <ThemeToggle theme={theme} onToggle={onToggleTheme} />
         </div>
       </header>
 
