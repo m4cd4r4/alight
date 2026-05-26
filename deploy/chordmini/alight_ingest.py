@@ -13,6 +13,7 @@ never be exposed unauthenticated.
 """
 import re
 import subprocess
+import time
 import uuid
 
 from flask import Blueprint, jsonify, request
@@ -20,24 +21,42 @@ from utils.paths import AUDIO_DIR
 
 bp = Blueprint("alight_ingest", __name__)
 
-# A watch URL on youtube.com / youtu.be / music.youtube.com only.
+# A full watch URL on youtube.com / youtu.be / music.youtube.com only. fullmatch
+# validates the whole string (an optional ?/&/# query tail is allowed, no
+# whitespace), so the value passed to yt-dlp can never be an option-lookalike.
 YT_RE = re.compile(
-    r"^https://(www\.|m\.|music\.)?(youtube\.com/watch\?v=|youtu\.be/)[\w\-]{6,}", re.I
+    r"https://(www\.|m\.|music\.)?(youtube\.com/watch\?v=|youtu\.be/)[\w\-]{6,}(?:[?&#]\S*)?",
+    re.I,
 )
 MAX_DURATION = 900  # seconds; refuse anything over 15 minutes
 MAX_FILESIZE = "40M"
 DOWNLOAD_TIMEOUT = 300
 META_TIMEOUT = 60
+REAP_AGE_S = 3600  # delete downloaded audio older than an hour
+
+
+def _reap(directory):
+    """Drop stale downloads so AUDIO_DIR cannot grow without bound and fill the
+    shared VPS disk. Runs opportunistically on each download; the just-written
+    files are far younger than the cutoff, so this never races the analysers."""
+    try:
+        now = time.time()
+        for f in directory.iterdir():
+            if f.is_file() and now - f.stat().st_mtime > REAP_AGE_S:
+                f.unlink(missing_ok=True)
+    except OSError:
+        pass
 
 
 @bp.route("/api/alight/yt-download", methods=["POST"])
 def yt_download():
     data = request.get_json(silent=True) or {}
     url = (data.get("url") or "").strip()
-    if not YT_RE.match(url):
+    if not YT_RE.fullmatch(url):
         return jsonify({"error": "A youtube.com or youtu.be watch URL is required."}), 400
 
     AUDIO_DIR.mkdir(parents=True, exist_ok=True)
+    _reap(AUDIO_DIR)
     vid = uuid.uuid4().hex
     out_tmpl = str(AUDIO_DIR / f"{vid}.%(ext)s")
     mp3_path = AUDIO_DIR / f"{vid}.mp3"
@@ -55,6 +74,8 @@ def yt_download():
         return jsonify({"error": "Fetching that audio timed out."}), 504
 
     if dl.returncode != 0 or not mp3_path.exists():
+        for leftover in AUDIO_DIR.glob(f"{vid}.*"):  # drop any .part / partial format files
+            leftover.unlink(missing_ok=True)
         return jsonify({
             "error": "Could not fetch audio for that link.",
             "detail": (dl.stderr or "").strip()[-300:],
