@@ -27,6 +27,15 @@ bp = Blueprint("alight_ingest", __name__)
 # Absent or empty -> run without cookies (works for the rare unchallenged video).
 COOKIES_FILE = os.environ.get("YT_COOKIES", "/cookies/youtube.txt")
 
+# Datacenter IPs (Vultr) get SABR-blocked for popular videos even with cookies -
+# YouTube returns no streamingData. The fix is to egress through a residential
+# IP. Operationally that's an SSH reverse SOCKS tunnel from Macdara's Perth
+# workstation: `ssh -R 172.17.0.1:1080 root@VPS` exposes the workstation's
+# residential IP as a SOCKS5 endpoint on the docker0 bridge. yt-dlp picks it
+# up via YT_PROXY. When unset, we run direct (which still works for unblocked
+# videos and is the right fallback if the tunnel is down).
+YT_PROXY = (os.environ.get("YT_PROXY") or "").strip()
+
 
 def _cookie_args():
     try:
@@ -35,6 +44,19 @@ def _cookie_args():
     except OSError:
         pass
     return []
+
+
+def _proxy_args():
+    return ["--proxy", YT_PROXY] if YT_PROXY else []
+
+
+def _extra_args():
+    # All three are needed together:
+    #   - proxy: egress via Perth (datacentre IPs get SABR-only formats)
+    #   - cookies: bypass the "sign in to confirm you're not a bot" page
+    #     that fires on the residential IP after a few anonymous requests
+    #   - (deno is invoked transparently via $PATH for signature solving)
+    return [*_cookie_args(), *_proxy_args()]
 
 # A full watch URL on youtube.com / youtu.be / music.youtube.com only. fullmatch
 # validates the whole string (an optional ?/&/# query tail is allowed, no
@@ -78,7 +100,7 @@ def yt_download():
 
     try:
         dl = subprocess.run(
-            ["yt-dlp", *_cookie_args(), "-q", "--no-progress", "--no-playlist",
+            ["yt-dlp", *_extra_args(), "-q", "--no-progress", "--no-playlist",
              "-f", "bestaudio", "-x", "--audio-format", "mp3",
              "--max-filesize", MAX_FILESIZE,
              "--match-filter", f"duration < {MAX_DURATION}",
@@ -99,7 +121,7 @@ def yt_download():
     title, artist, duration = "", "", 0.0
     try:
         meta = subprocess.run(
-            ["yt-dlp", *_cookie_args(), "-q", "--no-warnings", "--skip-download", "--no-playlist",
+            ["yt-dlp", *_extra_args(), "-q", "--no-warnings", "--skip-download", "--no-playlist",
              "--print", "%(title)s", "--print", "%(artist,uploader)s", "--print", "%(duration)s",
              url],
             capture_output=True, text=True, timeout=META_TIMEOUT,
