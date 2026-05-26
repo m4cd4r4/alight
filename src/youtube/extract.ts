@@ -50,7 +50,13 @@ async function proxiedFetch(input: RequestInfo | URL, init?: RequestInit): Promi
   if (!YT_HOSTS_RE.test(url)) return fetch(input, init);
   const headers = new Headers(init?.headers || {});
   headers.set("x-alight-gate", storedGate());
-  return fetch(`/api/yt-proxy?url=${encodeURIComponent(url)}`, { ...init, headers, method: init?.method || "GET" });
+  // The Fetch API rejects GET/HEAD with a body. youtubei.js sometimes constructs
+  // RequestInit objects with `body: null` or an empty body even for GETs - the
+  // browser still throws. Strip body whenever we know the method has no payload.
+  const method = (init?.method || "GET").toUpperCase();
+  const safeInit: RequestInit = { ...init, headers, method };
+  if (method === "GET" || method === "HEAD") delete (safeInit as { body?: unknown }).body;
+  return fetch(`/api/yt-proxy?url=${encodeURIComponent(url)}`, safeInit);
 }
 
 function pickExt(mime: string | undefined): "m4a" | "webm" {
