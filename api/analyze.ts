@@ -106,12 +106,14 @@ async function postForm(path: string, fields: Record<string, string>, timeoutMs:
   }
 }
 
-async function postAudio(path: string, audio: Buffer, fields: Record<string, string>, timeoutMs: number): Promise<{ status: number; json: unknown }> {
+async function postAudio(path: string, audio: Buffer, fields: Record<string, string>, timeoutMs: number, ext = "mp3"): Promise<{ status: number; json: unknown }> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const form = new FormData();
-    form.append("file", new Blob([new Uint8Array(audio)], { type: "audio/mpeg" }), "upload.mp3");
+    const safeExt = /^[a-z0-9]{2,5}$/i.test(ext) ? ext.toLowerCase() : "mp3";
+    const mime = safeExt === "m4a" ? "audio/mp4" : safeExt === "webm" ? "audio/webm" : safeExt === "ogg" || safeExt === "opus" ? "audio/ogg" : "audio/mpeg";
+    form.append("file", new Blob([new Uint8Array(audio)], { type: mime }), `upload.${safeExt}`);
     for (const [k, v] of Object.entries(fields)) form.append(k, v);
     const r = await fetch(`${backendBase()}${path}`, {
       method: "POST",
@@ -196,15 +198,15 @@ async function handleYoutube(res: VercelResponse, youtubeUrl: string): Promise<v
   );
 }
 
-async function handleUpload(res: VercelResponse, audio: Buffer, title: string, artist: string): Promise<void> {
+async function handleUpload(res: VercelResponse, audio: Buffer, title: string, artist: string, ext: string): Promise<void> {
   if (audio.length === 0) return fail(res, 400, "bad_request", "Empty upload.");
   if (audio.length > MAX_UPLOAD_BYTES) {
     return fail(res, 413, "too_large", "That file is too large (about 3MB max here). Try a shorter clip or a lower-bitrate file.");
   }
   await analyse(
     res,
-    () => postAudio("/api/recognize-chords", audio, { detector: CHORD_DETECTOR }, ANALYSE_TIMEOUT_MS),
-    () => postAudio("/api/detect-beats", audio, { detector: BEAT_DETECTOR }, ANALYSE_TIMEOUT_MS),
+    () => postAudio("/api/recognize-chords", audio, { detector: CHORD_DETECTOR }, ANALYSE_TIMEOUT_MS, ext),
+    () => postAudio("/api/detect-beats", audio, { detector: BEAT_DETECTOR }, ANALYSE_TIMEOUT_MS, ext),
     title,
     artist,
     0,
@@ -228,10 +230,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       audioBase64?: string;
       title?: string;
       artist?: string;
+      ext?: string;
     };
     if (typeof body.audioBase64 === "string" && body.audioBase64.length > 0) {
       const audio = Buffer.from(body.audioBase64, "base64");
-      return await handleUpload(res, audio, (body.title || "").trim(), (body.artist || "").trim());
+      return await handleUpload(res, audio, (body.title || "").trim(), (body.artist || "").trim(), (body.ext || "mp3").trim());
     }
     const url = (body.youtubeUrl || "").trim();
     if (url) return await handleYoutube(res, url);
