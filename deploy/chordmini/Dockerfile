@@ -73,7 +73,16 @@ COPY error_handlers.py .
 COPY compat/ compat/
 RUN rm -f /app/scipy_patch.py || true
 
-RUN useradd --create-home --shell /bin/bash --uid 1001 app && chown -R app:app /app
+# Alight's additions: the ingest route + a wrapper entrypoint that registers it
+# on ChordMini's app without editing any ChordMini module.
+COPY alight_ingest.py .
+COPY alight_app.py .
+
+# AUDIO_DIR resolves to /public/audio (PROJECT_ROOT/public/audio); the ingest
+# route writes downloaded audio there for the analysers to read.
+RUN useradd --create-home --shell /bin/bash --uid 1001 app \
+    && mkdir -p /public/audio \
+    && chown -R app:app /app /public
 USER app
 
 EXPOSE 8080
@@ -88,4 +97,4 @@ ENV FLASK_ENV=production \
 # One worker keeps memory predictable under the runtime --memory cap; this is a
 # personal, low-concurrency tool. Long timeout for cold-model CPU inference.
 CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "1", "--timeout", "600", \
-     "--worker-class", "sync", "--max-requests", "500", "--preload", "app:app"]
+     "--worker-class", "sync", "--max-requests", "500", "--preload", "alight_app:app"]

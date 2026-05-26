@@ -74,6 +74,53 @@
 .load-stage .heading .demo-link:hover { color: var(--ink-primary); }
 .load-stage .heading .demo-link:focus-visible { outline: 2px solid var(--ink-primary); outline-offset: 2px; }
 
+/* Play-along (audio analysis) input, below the chord search. */
+.load-divider {
+  height: 1px;
+  background: var(--hairline);
+  margin: 32px 0 24px;
+}
+.analyze-block { display: flex; flex-direction: column; gap: 12px; }
+.analyze-block .t-label-caps { color: var(--ink-tertiary); }
+.analyze-field {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+}
+.analyze-field input {
+  flex: 1;
+  min-width: 0;
+  background: var(--surface-sunken);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-1);
+  padding: 10px 14px;
+  font-family: var(--font-text);
+  font-size: 15px;
+  color: var(--ink-primary);
+}
+.analyze-field input::placeholder { color: var(--ink-tertiary); }
+.analyze-field input:focus-visible { outline: 2px solid var(--ink-primary); outline-offset: 1px; }
+.analyze-field .btn-primary { white-space: nowrap; }
+.analyze-sub {
+  font-family: var(--font-text);
+  font-size: 13px;
+  color: var(--ink-tertiary);
+  line-height: 1.5;
+}
+.analyze-progress { display: inline-flex; align-items: center; gap: 10px; color: var(--ink-secondary); }
+.link-btn {
+  appearance: none;
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: var(--hand-right);
+  cursor: pointer;
+  text-decoration: underline;
+}
+.link-btn:hover { color: var(--ink-primary); }
+.link-btn:disabled { opacity: 0.5; cursor: default; }
+
 .search-field {
   display: flex;
   align-items: center;
