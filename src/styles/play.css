@@ -95,6 +95,7 @@ html, body {
   justify-content: center;
   padding: 40px 0 24px;
   gap: 32px;
+  min-width: 0; /* let the scrollable strip clip+scroll instead of widening the page */
 }
 
 .transport-row {
@@ -145,7 +146,7 @@ html, body {
   display: flex;
   align-items: flex-end;
   gap: 56px;
-  justify-content: flex-start;
+  justify-content: center;
 }
 .hand-block { display: flex; flex-direction: column; gap: 14px; }
 .hand-header {
@@ -280,10 +281,174 @@ html, body {
   text-align: center;
 }
 
+/* ---- Chord name + position counter ------------------------- */
+.chord-label .name-row {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.chord-position {
+  font-size: 15px;
+  color: var(--ink-tertiary);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+/* ---- Chord overview: strip (under the keys) and grid (takes over) ---- */
+.chord-strip { display: flex; min-width: 0; max-width: 100%; }
+.chord-strip.is-strip {
+  flex-direction: row;
+  gap: 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 4px 2px 12px;
+  scroll-padding-inline: 24px;
+}
+.chord-strip.is-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  overflow-y: auto;
+  max-height: max(160px, calc(100vh - 320px));   /* ~2 rows above the fold, scroll for more */
+  padding: 4px 2px 8px;
+}
+
+.mini-chord {
+  appearance: none;
+  background: var(--surface-raised);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-1);
+  padding: 10px 10px 8px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;            /* strip: natural width, no shrink */
+  transition: border-color var(--dur-toggle) var(--ease-out),
+              background-color var(--dur-toggle) var(--ease-out),
+              box-shadow var(--dur-toggle) var(--ease-out);
+}
+.chord-strip.is-grid .mini-chord { flex: 1 1 auto; }
+.mini-chord:hover { background: var(--surface-sunken); border-color: var(--hairline-strong); }
+.mini-chord:focus-visible { outline: 2px solid var(--ink-primary); outline-offset: 2px; }
+.mini-chord.is-active {
+  border-color: var(--ink-primary);
+  box-shadow: inset 0 0 0 1px var(--ink-primary);
+}
+.mini-chord.in-loop {
+  background: var(--pulse-soft);
+  border-color: color-mix(in oklch, var(--pulse) 50%, var(--hairline));
+}
+
+.mini-chord-head {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-height: 18px;
+}
+.mini-chord-name {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--ink-primary);
+  letter-spacing: -0.01em;
+}
+.chord-tag {
+  font-family: var(--font-text);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 1px 4px;
+  border-radius: var(--radius-1);
+}
+.chord-tag.is-start { background: var(--hand-left); color: var(--hand-left-ink); }
+.chord-tag.is-end   { background: var(--hand-right); color: var(--hand-right-ink); }
+
+.mini-chord-lyric {
+  font-family: var(--font-text);
+  font-size: 11px;
+  line-height: 1.3;
+  color: var(--ink-tertiary);
+  max-width: 150px;          /* never wider than the hands - keeps cells uniform */
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-height: 14px;
+}
+.mini-chord-hands { display: flex; align-items: flex-end; gap: 6px; }
+
+/* ---- Grid heading ------------------------------------------ */
+.grid-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--hairline);
+}
+.grid-heading-title {
+  font-family: var(--font-display);
+  font-size: var(--t-display-sm);
+  color: var(--ink-primary);
+}
+
+/* ---- Count-in overlay -------------------------------------- */
+.count-in {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in oklch, var(--surface-base) 70%, transparent);
+  z-index: 20;
+  pointer-events: none;
+}
+.count-in-num {
+  font-family: var(--font-display);
+  font-size: clamp(120px, 22vw, 260px);
+  font-weight: 400;
+  color: var(--ink-primary);
+  line-height: 1;
+}
+
+/* ---- Transpose + loop controls (footer) -------------------- */
+.transpose-ctl,
+.loop-ctl { display: inline-flex; align-items: center; gap: 6px; }
+.transpose-ctl button,
+.loop-ctl button,
+.easy-key-btn {
+  appearance: none;
+  background: var(--surface-raised);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-1);
+  padding: 6px 10px;
+  font-family: var(--font-text);
+  font-size: 13px;
+  color: var(--ink-secondary);
+  cursor: pointer;
+  transition: background-color var(--dur-toggle) var(--ease-out), color var(--dur-toggle) var(--ease-out);
+}
+.transpose-ctl button:hover,
+.loop-ctl button:hover,
+.easy-key-btn:hover { color: var(--ink-primary); background: var(--surface-sunken); }
+.transpose-ctl button:focus-visible,
+.loop-ctl button:focus-visible,
+.easy-key-btn:focus-visible { outline: 2px solid var(--ink-primary); outline-offset: 2px; }
+.loop-ctl button:disabled { opacity: 0.4; cursor: not-allowed; }
+.key-readout { min-width: 34px; text-align: center; font-size: 15px; color: var(--ink-primary); }
+.ctl-block.toggles { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 16px; }
+
 /* Smooth chord-to-chord crossfade on the keyboards.
    Each highlight gets var(--dur-chord); see piano.css. */
 @media (max-width: 1100px) {
   .play-page { padding: 0 24px; }
   .keyboards { gap: 32px; flex-wrap: wrap; }
   .chord-label .pck-chord-now .name { font-size: 72px; }
+  .chord-strip.is-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  .chord-strip.is-grid { grid-template-columns: 1fr; max-height: max(160px, calc(100vh - 280px)); }
 }
