@@ -9,9 +9,9 @@ import { HandMarker } from "./HandMarker.tsx";
 
 const WHITE_NOTES = ["C", "D", "E", "F", "G", "A", "B"];
 const BLACK_AFTER: Record<string, string> = { C: "C#", D: "D#", F: "F#", G: "G#", A: "A#" };
-const WHITE_WIDTH: Record<KeyboardSize, number> = { sm: 26, md: 34, lg: 44 };
+const WHITE_WIDTH: Record<KeyboardSize, number> = { xs: 12, sm: 26, md: 34, lg: 44 };
 
-type KeyboardSize = "sm" | "md" | "lg";
+type KeyboardSize = "xs" | "sm" | "md" | "lg";
 type StyleWithVars = CSSProperties & Record<`--${string}`, string>;
 
 interface KeyboardProps {
