@@ -125,12 +125,26 @@ function withFingers(midis: number[], fingers: number[]): VoicedNote[] {
   }));
 }
 
+/**
+ * Reduce a chord to a plain major or minor triad a beginner can actually
+ * finger: drop every extension, drop the slash bass, map diminished to minor
+ * and augmented/sus to major. The result is always a 3-note root-position triad.
+ */
+export function simplifyToTriad(rawSymbol: string): string {
+  const chordPart = rawSymbol.split("/")[0];
+  const chord = Chord.get(chordPart);
+  if (chord.empty || !chord.tonic) return chordPart; // leave unparseable as written
+  const root = chord.tonic;
+  return chord.quality === "Minor" || chord.quality === "Diminished" ? `${root}m` : root;
+}
+
 /** Voice an entire progression. The greedy pass threads through the steps. */
 export function voiceSong(chords: string[], voicing: Voicing): VoicedStep[] {
   const steps: VoicedStep[] = [];
   let prevRight: number[] | null = null;
 
-  for (const symbol of chords) {
+  for (const rawSymbol of chords) {
+    const symbol = voicing === "beginner" ? simplifyToTriad(rawSymbol) : rawSymbol;
     const [chordPart, bassPart] = symbol.split("/");
     const chord = Chord.get(chordPart);
 
@@ -140,7 +154,7 @@ export function voiceSong(chords: string[], voicing: Voicing): VoicedStep[] {
     }
 
     const allChromas = chord.notes.map((n) => Note.chroma(n));
-    const toneNotes = voicing === "simple" ? chord.notes.slice(0, 3) : chord.notes;
+    const toneNotes = voicing === "full" ? chord.notes : chord.notes.slice(0, 3);
     const toneChromas = toneNotes.map((n) => Note.chroma(n));
 
     const bassChroma = bassPart ? Note.chroma(bassPart) : allChromas[0];

@@ -18,6 +18,14 @@
   user-select: none;
 }
 
+.pck-keyboard.pck-xs {
+  --pck-white-w: 12px;
+  --pck-white-h: 48px;
+  --pck-black-w: 8px;
+  --pck-black-h: 30px;
+  --pck-marker:  4px;
+}
+
 .pck-keyboard.pck-sm {
   --pck-white-w: 26px;
   --pck-white-h: 110px;
@@ -25,6 +33,11 @@
   --pck-black-h: 70px;
   --pck-marker:  7px;
 }
+
+/* At thumbnail size the colored key fill IS the signal; labels would be noise. */
+.pck-xs .pck-note,
+.pck-xs .pck-finger,
+.pck-xs .pck-marker { display: none; }
 
 .pck-keyboard.pck-md {
   --pck-white-w: 34px;

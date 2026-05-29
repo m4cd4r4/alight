@@ -2,7 +2,7 @@
 
 export type Hand = "left" | "right";
 export type KeyState = "now" | "next";
-export type Voicing = "simple" | "full";
+export type Voicing = "simple" | "full" | "beginner";
 
 export interface VoicedNote {
   /** Sharp-spelled scientific pitch, e.g. "C#4". */
