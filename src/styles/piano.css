@@ -283,7 +283,8 @@
   background: var(--ink-primary);
   color: var(--surface-base);
 }
-.pck-segmented button:hover:not([aria-pressed="true"]) { color: var(--ink-primary); }
+.pck-segmented button:hover:not([aria-pressed="true"]):not(:disabled) { color: var(--ink-primary); }
+.pck-segmented button:disabled { opacity: 0.35; cursor: not-allowed; }
 
 .pck-switch {
   display: inline-flex;
