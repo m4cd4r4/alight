@@ -10,6 +10,7 @@ import type { Song } from "../music/types.ts";
 import { AnalyzeInput } from "./AnalyzeInput.tsx";
 import { SongLibrary } from "./SongLibrary.tsx";
 import { ThemeToggle } from "./ThemeToggle.tsx";
+import { YoutubeSearch } from "./YoutubeSearch.tsx";
 
 type LoadHandler = (song: Song, timeline?: Timeline | null) => void;
 
@@ -293,6 +294,7 @@ export function LoadView({
           ) : null}
 
           <div className="load-divider" />
+          <YoutubeSearch onLoad={onLoad} />
           <AnalyzeInput onLoad={onLoad} />
         </div>
 
