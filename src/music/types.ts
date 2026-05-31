@@ -30,4 +30,9 @@ export interface Song {
   capoNote: string;
   /** The progression as chord symbols; the voicing engine derives the keys. */
   chords: string[];
+  /**
+   * When set, the Play view forces this voicing and greys out the others - for
+   * pieces whose harmony would be misrepresented by the simpler voicings.
+   */
+  lockVoicing?: Voicing;
 }

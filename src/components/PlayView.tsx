@@ -54,11 +54,16 @@ export function PlayView({
   theme: "light" | "dark";
   onToggleTheme: () => void;
 }) {
-  const [voicing, setVoicing] = useState<Voicing>("beginner");
+  // A song may lock its voicing (e.g. Moonlight needs Full); seed from it and grey out the rest.
+  const [voicing, setVoicing] = useState<Voicing>(song.lockVoicing ?? "beginner");
   const [fingering, setFingering] = useState(true);
   const [allChords, setAllChords] = useState(false);
   const [stripLyrics, setStripLyrics] = useState(false);
   const [transpose, setTranspose] = useState(0);
+
+  const disabledVoicings = song.lockVoicing
+    ? VOICING_OPTIONS.map((o) => o.value).filter((v) => v !== song.lockVoicing)
+    : undefined;
 
   // When a play-along timeline is present its chords drive the keyboard (they
   // are time-aligned); otherwise the song's own chord sequence does.
@@ -274,7 +279,7 @@ export function PlayView({
 
       <footer className="play-footer">
         <div className="footer-controls">
-          <Segmented label="Voicing" options={VOICING_OPTIONS} value={voicing} onChange={setVoicing} />
+          <Segmented label="Voicing" options={VOICING_OPTIONS} value={voicing} onChange={setVoicing} disabledValues={disabledVoicings} />
           <Segmented label="Speed" options={SPEED_OPTIONS} value={String(pa.speed)} onChange={(v) => pa.setSpeed(Number(v))} />
 
           <div className="ctl-block">
