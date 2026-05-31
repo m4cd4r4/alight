@@ -19,6 +19,30 @@ See [docs/BRIEF.md](docs/BRIEF.md) for the original product brief and
 
 Live: <https://alight-rho.vercel.app> (gated, ask Macdara for the password).
 
+## Screenshots
+
+**Play view** - the keyboards light exactly which keys to press, with a position
+counter, the next chord ghosted ahead, and an at-a-glance overview strip of the
+whole song.
+
+| Light | Dark |
+| :---: | :---: |
+| ![Play view, light](docs/screenshots/play-light.png) | ![Play view, dark](docs/screenshots/play-dark.png) |
+
+**All-chords overview** - toggle to see every chord in the song as a grid, with
+the lyric line overlaid.
+
+| Light | Dark |
+| :---: | :---: |
+| ![All-chords grid, light](docs/screenshots/grid-light.png) | ![All-chords grid, dark](docs/screenshots/grid-dark.png) |
+
+**Find a song** - a built-in public-domain library, title search, and in-app
+YouTube search with inline preview.
+
+| Light | Dark |
+| :---: | :---: |
+| ![Find a song, light](docs/screenshots/load-light.png) | ![Find a song, dark](docs/screenshots/load-dark.png) |
+
 ## Run
 
 ```bash
@@ -44,10 +68,15 @@ client + `ALIGHT_PASSWORD` for the serverless function).
 
 ### Load View
 
+- **Built-in library**: a shelf of public-domain songs (nursery rhymes, folk,
+  Christmas carols, classical themes) that play instantly - bundled in the app,
+  so no network, no account, and nothing that can break.
 - **Find a song**: type a title to fetch chords from Ultimate Guitar (best
   version auto-picked, alternates one tap away), or paste a chord sheet. Both
   run the same parser; capo songs are transposed to true piano pitch. A
   blocked or empty fetch drops cleanly to the paste box.
+- **Search YouTube**: find a video in-app, preview it inline, and pull its
+  chords without leaving the app (YouTube Data API + IFrame embed).
 - **Play along with audio**: paste a YouTube link or upload an audio file.
   Returns chords + beats + synced lyrics for the Play view to animate.
 
