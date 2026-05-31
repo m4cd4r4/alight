@@ -4,11 +4,11 @@
 // for when the fetch is blocked or the song is not found.
 
 import { type FormEvent, useState } from "react";
-import { demoSong, demoTimeline } from "../data/demo.ts";
 import { parse } from "../music/parse.ts";
 import type { Timeline } from "../music/timeline.ts";
 import type { Song } from "../music/types.ts";
 import { AnalyzeInput } from "./AnalyzeInput.tsx";
+import { SongLibrary } from "./SongLibrary.tsx";
 import { ThemeToggle } from "./ThemeToggle.tsx";
 
 type LoadHandler = (song: Song, timeline?: Timeline | null) => void;
@@ -243,11 +243,10 @@ export function LoadView({
         <div>
           <div className="heading">
             <h1>Find a song</h1>
-            <div className="sub">Type a title and press Enter. Or paste a chord sheet on the right.</div>
-            <button type="button" className="demo-link" onClick={() => onLoad(demoSong, demoTimeline)}>
-              New here? Play the sample - Amazing Grace
-            </button>
+            <div className="sub">Pick a free song to learn, search any title, or paste a chord sheet on the right.</div>
           </div>
+
+          <SongLibrary onLoad={onLoad} />
 
           {state.status === "error" ? <FetchBanner message={state.message} /> : null}
 
