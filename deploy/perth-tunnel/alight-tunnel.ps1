@@ -12,7 +12,14 @@
 # `Stop-ScheduledTask -TaskName "Alight YT Tunnel"`.
 
 $ErrorActionPreference = "Continue"
-$VPS = "root@REDACTED-VPS-IP"
+# VPS target is read from the ALIGHT_TUNNEL_VPS env var so the host stays out of
+# the repo. Set it once (User scope):
+#   [Environment]::SetEnvironmentVariable("ALIGHT_TUNNEL_VPS","root@your-vps-ip","User")
+$VPS = $env:ALIGHT_TUNNEL_VPS
+if (-not $VPS) {
+    Write-Error "ALIGHT_TUNNEL_VPS is not set. Set it to e.g. root@your-vps-ip (User scope)."
+    exit 1
+}
 $Bind = "172.17.0.1:1080"
 $LogDir = Join-Path $env:LOCALAPPDATA "alight-tunnel"
 New-Item -ItemType Directory -Path $LogDir -Force | Out-Null

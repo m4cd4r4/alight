@@ -81,21 +81,21 @@ Diagnose in this order:
 3. Does the SOCKS endpoint egress through Perth?
 
    ```bash
-   ssh root@REDACTED-VPS-IP 'curl --socks5-hostname 172.17.0.1:1080 https://api.ipify.org'
-   # Should return your Perth residential IP, not REDACTED-VPS-IP.
+   ssh root@YOUR_VPS_IP 'curl --socks5-hostname 172.17.0.1:1080 https://api.ipify.org'
+   # Should return your Perth residential IP, not YOUR_VPS_IP.
    ```
 
 4. Cookies still valid?
 
    ```bash
-   ssh root@REDACTED-VPS-IP 'wc -l /opt/chordmini-recon/cookies/youtube.txt'
+   ssh root@YOUR_VPS_IP 'wc -l /opt/chordmini-recon/cookies/youtube.txt'
    # Empty file -> we run cookie-less, which hits the bot check.
    ```
 
 5. yt-dlp + deno still in the running container?
 
    ```bash
-   ssh root@REDACTED-VPS-IP 'docker exec chordmini-alight bash -c "/opt/venv/bin/yt-dlp --version; /usr/local/bin/deno --version"'
+   ssh root@YOUR_VPS_IP 'docker exec chordmini-alight bash -c "/opt/venv/bin/yt-dlp --version; /usr/local/bin/deno --version"'
    ```
 
 ## Fallback if the tunnel is permanently gone

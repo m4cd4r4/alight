@@ -21,7 +21,7 @@ Add **synced lyrics** and a **gentle animation** that guides a non-reading hobby
 
 ## Locked decisions (from the 2026-05-26 research - see PROJECT-PLAN Wave 3)
 
-- **Data = self-host ChordMini's MIT `python_backend`** on the Donnacha VPS (REDACTED-VPS-IP, Docker). Endpoints Alight calls: `POST /api/recognize-chords` (chords + timestamps), `POST /api/detect-beats` (beats + BPM), `GET /api/lrclib-lyrics` (synced lyrics via LRCLIB). This is the hard, already-built MIR layer.
+- **Data = self-host ChordMini's MIT `python_backend`** on the Donnacha VPS (Docker). Endpoints Alight calls: `POST /api/recognize-chords` (chords + timestamps), `POST /api/detect-beats` (beats + BPM), `GET /api/lrclib-lyrics` (synced lyrics via LRCLIB). This is the hard, already-built MIR layer.
 - **Do NOT reskin or fork ChordMini's frontend.** A deep live + code audit confirmed its piano view is a Synthesia-style falling-notes roll (single 88-key, instrument-coloured, no hand-split, no finger numbers) on a heavy Next.js/Firebase/~101k-LOC stack - the opposite of Alight's calm two-hand non-reader view. Keep Alight lean with its own engine and view. At most, read `utils/chordToMidi.ts` for chord-alias ideas; copy a table, not the app.
 - **Timing:** beat-accurate from ChordMini when available; **tap-tempo + manual-step** as the always-works fallback (and for paste/UG-only songs with no analysis). The Play view must still work with no timing data.
 - **Lyrics are copyrighted** (chords are not), and AU has no general personal-use exception. Keep it strictly personal: the deploy is **gated behind a Vercel Pro password** before any lyric ships. Source synced lyrics via LRCLIB. Never distribute or monetize.

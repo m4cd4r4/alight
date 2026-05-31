@@ -55,6 +55,12 @@ syntax, OpenSSH 7.6+). No extra binary on Perth, no extra binary on the VPS.
 
 ## Running the tunnel persistently on Perth
 
+First set the VPS target once (kept out of the repo, read by the script):
+
+```powershell
+[Environment]::SetEnvironmentVariable("ALIGHT_TUNNEL_VPS", "root@your-vps-ip", "User")
+```
+
 ### Start it now (foreground, Ctrl+C to stop)
 
 ```powershell
@@ -86,10 +92,10 @@ Logs land at `%LOCALAPPDATA%\alight-tunnel\tunnel.log`.
 ## Verifying the tunnel from the VPS
 
 ```bash
-ssh root@REDACTED-VPS-IP
+ssh root@YOUR_VPS_IP
 # Should listen on docker0:1080
 ss -ltn | grep 1080
-# Should return Perth's residential IP, not REDACTED-VPS-IP
+# Should return Perth's residential IP, not YOUR_VPS_IP
 curl --socks5-hostname 172.17.0.1:1080 https://api.ipify.org
 # From inside the container too
 docker exec chordmini-alight bash -lc \
