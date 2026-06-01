@@ -1,138 +1,90 @@
-# Alight
+<h1 align="center">🎹 Alight</h1>
 
-Type a song, see two mini piano keyboards (left hand + right hand) light up
-exactly which keys to press for each chord as you step through. A calm,
-literal "which keys do I press" tool for hobbyist players.
+<p align="center"><strong>See exactly which piano keys to press - one chord at a time.</strong></p>
 
-There are two ways to load a song:
+<p align="center">
+  <img src="docs/screenshots/play-dark.png" alt="Alight Play view: two mini keyboards light up the exact keys to press for each chord" width="860">
+</p>
 
-- **By title** - the app fetches chords from Ultimate Guitar's signed mobile
-  API, parses them, and plays you through.
-- **Play along with a recording** - paste a YouTube link (or upload audio),
-  the self-hosted ChordMini backend extracts chord predictions + beats +
-  synced lyrics from the audio, and the Play view animates in time with
-  the music. See [docs/play-along/yt-tunnel.md](docs/play-along/yt-tunnel.md)
-  for the residential-IP tunnel that lets YouTube extraction work at all.
+Alight turns a song into two glowing mini-keyboards - one for each hand - that light up the
+precise keys for every chord. No sheet music, no theory homework. Sit down, look at the screen,
+and play the song that's already in your head.
 
-See [docs/BRIEF.md](docs/BRIEF.md) for the original product brief and
-[docs/PROJECT-PLAN.md](docs/PROJECT-PLAN.md) for what's shipped vs what's next.
+**Live:** <https://alight-rho.vercel.app> (gated - ask Macdara for the password)
 
-Live: <https://alight-rho.vercel.app> (gated, ask Macdara for the password).
+---
 
-## Screenshots
+## Why it's lovely to play with
 
-**Play view** - the keyboards light exactly which keys to press, with a position
-counter, the next chord ghosted ahead, and an at-a-glance overview strip of the
-whole song.
+- 🎹 **What you see is what you press.** The lit keys are exactly the keys - left-hand bass on one
+  keyboard, right-hand chord on the other, with note names, finger numbers, and a shape marker so
+  the hands never get mixed up.
+- 🌱 **Beginner-first.** A "Beginner" voicing simplifies every chord to a friendly triad, and one
+  tap finds the easiest key to play it in.
+- 🎧 **Play along to the real recording.** Paste a YouTube link and Alight pulls the chords, beats,
+  and synced lyrics - then plays the song while the keyboards follow it in time. Slow it to 0.75x
+  for practice (the pitch stays put) and loop the tricky bar.
+- 📚 **A built-in shelf of songs.** Nursery rhymes, folk tunes, carols, and classical themes are
+  bundled right in - all public domain, all instant, nothing to break.
+- 🌗 **Light and dark, and it's quick.** A calm "showroom" look by day, glowing keys by night.
 
-| Light | Dark |
-| :---: | :---: |
-| ![Play view, light](docs/screenshots/play-light.png) | ![Play view, dark](docs/screenshots/play-dark.png) |
+## A look around
 
-**All-chords overview** - toggle to see every chord in the song as a grid, with
-the lyric line overlaid.
+**All chords at a glance** - flip to a grid of every chord in the song, lyric line and all, so you
+can see the whole shape before you play it.
 
 | Light | Dark |
 | :---: | :---: |
 | ![All-chords grid, light](docs/screenshots/grid-light.png) | ![All-chords grid, dark](docs/screenshots/grid-dark.png) |
 
-**Find a song** - a built-in public-domain library, title search, and in-app
-YouTube search with inline preview.
+**Find a song** - a public-domain library, title search, and in-app YouTube search with a live
+preview, all in one place.
 
 | Light | Dark |
 | :---: | :---: |
 | ![Find a song, light](docs/screenshots/load-light.png) | ![Find a song, dark](docs/screenshots/load-dark.png) |
 
-## Run
+## Two ways to start a song
+
+- **By title.** Type a song name and Alight fetches the chords, picks the best version, and plays
+  you through. Capo songs are transposed to true piano pitch automatically.
+- **Play along with a recording.** Paste a YouTube link (or upload an audio file). The self-hosted
+  ChordMini backend listens to the track and returns chords + beats + synced lyrics, and the Play
+  view moves in time with the music - with the recording playing right alongside.
+
+## Run it locally
 
 ```bash
 npm install
 npm run dev           # Vite dev server at http://localhost:5173 (UI only)
-vercel dev            # full app + /api/chords + /api/analyze proxies
+vercel dev            # full app, including the /api proxies
 npm run build         # type-checks (tsc -b, strict) and builds to dist/
 npm test              # parser + timeline tests (Node's built-in runner)
 npm run typecheck:api # type-checks the serverless functions
 ```
 
-`npm run dev` alone serves the UI only - the title-search path and the
-play-along path both need their serverless functions, so use `vercel dev` to
-exercise them locally. The title search hits Ultimate Guitar's signed mobile
-API (`api.ultimate-guitar.com`); the play-along path proxies through to the
-ChordMini backend on the VPS.
+`npm run dev` serves the UI on its own; the title-search and play-along paths need their serverless
+functions, so use `vercel dev` to exercise them. The gate password defaults to `alight2026` and
+lives in [src/gate.ts](src/gate.ts) (override with `VITE_ALIGHT_PASSWORD` for the client and
+`ALIGHT_PASSWORD` for the functions).
 
-The gate password defaults to `alight2026` and is configured in code at
-[src/gate.ts](src/gate.ts) (override via `VITE_ALIGHT_PASSWORD` for the
-client + `ALIGHT_PASSWORD` for the serverless function).
+## How it works (the fun part)
 
-## What works
+The heart of Alight is the **voicing engine** ([src/music/voicing.ts](src/music/voicing.ts)). Give
+it a chord symbol and it works out the left-hand bass, the right-hand chord tones, and the inversion
+label - then places the right hand so it barely moves from chord to chord. What the keyboards light
+is exactly what the engine produces. No faked keys. Chord parsing rides on
+[`tonal`](https://github.com/tonaljs/tonal).
 
-### Load View
+For play-along, the **timeline** ([src/music/timeline.ts](src/music/timeline.ts)) is the bridge:
+`fromChordMini()` maps the backend's chords + beats + lyrics into one shared shape, and a small
+`requestAnimationFrame` clock (or the real audio element, when a recording is loaded) drives the
+animation.
 
-- **Built-in library**: a shelf of public-domain songs (nursery rhymes, folk,
-  Christmas carols, classical themes) that play instantly - bundled in the app,
-  so no network, no account, and nothing that can break.
-- **Find a song**: type a title to fetch chords from Ultimate Guitar (best
-  version auto-picked, alternates one tap away), or paste a chord sheet. Both
-  run the same parser; capo songs are transposed to true piano pitch. A
-  blocked or empty fetch drops cleanly to the paste box.
-- **Search YouTube**: find a video in-app, preview it inline, and pull its
-  chords without leaving the app (YouTube Data API + IFrame embed).
-- **Play along with audio**: paste a YouTube link or upload an audio file.
-  Returns chords + beats + synced lyrics for the Play view to animate.
+<details>
+<summary><strong>The stack behind the YouTube button</strong></summary>
 
-### Play View
-
-- Two keyboards (left `C2-E3`, right `F3-B4`) lighting the exact voiced keys,
-  with note name + finger number, hands distinguished by colour AND shape
-  (square = left, triangle = right).
-- Current chord + full inversion label; next chord ghosted on the keys.
-- Stepping with spacebar / right arrow / Next, back with left arrow / Back.
-- Voicing toggle (Simple/Full), fingering on/off, light/dark theme.
-- **Play-along mode**: when loaded from audio, the timeline drives chord
-  changes and the lyrics panel scrolls in sync with the recording.
-
-## Architecture
-
-```
-src/
-  components/   PlayView, LoadView, AnalyzeInput, Keyboard, LyricsPanel,
-                HandMarker, ChordLabel, Transport, Controls, Gate
-  music/        types, note helpers, voicing engine, timeline contract,
-                ChordMini -> Timeline mapper, LRC parser (all pure, no React)
-  play/         usePlayAlong rAF clock hook (timed + manual modes)
-  youtube/      videoIdFromUrl helper (extraction itself is server-side)
-  data/         static sample songs
-  styles/       design tokens
-
-api/            Vercel serverless functions
-  chords.ts     Ultimate Guitar mobile-API proxy (title search)
-  analyze.ts    ChordMini proxy (YouTube + upload analysis)
-  lyrics.ts     LRCLIB synced-lyrics fallback
-
-deploy/
-  chordmini/    self-hosted lean ChordMini backend (Docker, runs on VPS)
-  perth-tunnel/ PowerShell wrapper + scheduled-task install for the
-                residential SSH reverse tunnel
-```
-
-The **voicing engine** ([src/music/voicing.ts](src/music/voicing.ts)) is the
-core of the Play view. Given a progression of chord symbols it derives, per
-chord: the left-hand bass, the right-hand chord tones (triad for Simple, full
-chord for Full), and the inversion label. The right-hand octave placement is
-chosen by a greedy nearest-voicing pass so the hand barely moves chord to
-chord. Chord parsing uses [`tonal`](https://github.com/tonaljs/tonal). What
-the keyboards light is exactly what the engine produces - no faked keys
-(WYSIWYG).
-
-The **timeline contract**
-([src/music/timeline.ts](src/music/timeline.ts)) is the bridge between the
-ChordMini analysis JSON and the Play view's animation loop. `fromChordMini()`
-maps the backend's `chord_predictions[]` + `beats[]` + LRC string into the
-shared `Timeline` shape; `usePlayAlong` ticks an `rAF` clock against it.
-
-## Play-along: the stack behind the YouTube button
-
-The "paste a YouTube link" path runs through four hops:
+YouTube no longer serves real audio to datacentre IPs, so the "paste a link" path takes a scenic route:
 
 ```
 Browser  ->  Vercel /api/analyze  ->  ChordMini backend (VPS)  ->  yt-dlp ->
@@ -145,35 +97,37 @@ Browser  ->  Vercel /api/analyze  ->  ChordMini backend (VPS)  ->  yt-dlp ->
                                                                     YouTube
 ```
 
-1. Client POSTs `{ youtubeUrl }` (or `{ audioBase64 }` for uploads) with the
-   admin gate header to `/api/analyze`.
-2. Vercel function forwards to the ChordMini backend on the Donnacha VPS,
-   guarded by a bearer token at nginx.
-3. ChordMini's ingest blueprint shells out to `yt-dlp` with `--proxy
-   socks5h://172.17.0.1:1080`.
-4. The SOCKS endpoint is an SSH reverse-forward from Macdara's Perth
-   workstation. yt-dlp egresses through a residential IP - the only reason
-   YouTube serves real audio formats (datacentre IPs only get SABR/storyboard
-   placeholders).
+1. The client POSTs `{ youtubeUrl }` (or an uploaded audio file) with the gate header to `/api/analyze`.
+2. The Vercel function forwards to the self-hosted ChordMini backend on the VPS, behind a bearer token at nginx.
+3. ChordMini runs `yt-dlp` through a SOCKS proxy.
+4. That proxy is an SSH reverse-tunnel from a home workstation, so yt-dlp egresses through a residential IP - the only way YouTube hands over real audio formats.
 
-If the tunnel is down, the YouTube path returns `Could not fetch audio for
-that link.` and the user can fall back to uploading an audio file (capped at
-~3 MB by Vercel's body limit). Operational details + diagnosis playbook in
+If the tunnel is down, the upload path still works. Details and the diagnosis playbook live in
 [docs/play-along/yt-tunnel.md](docs/play-along/yt-tunnel.md).
+</details>
 
-## Repository layout
+<details>
+<summary><strong>Repository layout</strong></summary>
 
-| Path                              | Purpose                                                              |
-| --------------------------------- | -------------------------------------------------------------------- |
-| `src/`                            | React + Vite app (Play view, Load view, voicing engine)              |
-| `api/`                            | Vercel serverless functions (UG proxy, ChordMini proxy, LRCLIB)      |
-| `deploy/chordmini/`               | Lean ChordMini Docker build (CPU-only, no TF/Spleeter) + run script  |
-| `deploy/perth-tunnel/`            | PowerShell wrapper for the residential SSH tunnel + install README   |
-| `design/`                         | Tokenised design system (colors, typography, piano, play)            |
-| `docs/`                           | Briefs, project plan, play-along architecture                        |
+| Path | Purpose |
+| --- | --- |
+| `src/` | React + Vite app (Play view, Load view, voicing engine) |
+| `api/` | Vercel serverless functions (Ultimate Guitar proxy, ChordMini proxy, YouTube search) |
+| `deploy/chordmini/` | Lean CPU-only ChordMini Docker build + run script |
+| `deploy/perth-tunnel/` | The residential SSH tunnel wrapper + install README |
+| `design/` | Tokenised design system (colours, typography, piano, play) |
+| `docs/` | Product brief, project plan, play-along architecture |
 
-## Design system
+</details>
 
-The design system of record lives in [design/](design/); the visual aesthetic
-is locked (Luxury Quiet - cool showroom white, Spectral + Atkinson
-Hyperlegible).
+## What's next
+
+Phase 1 (hear the recording while the chords follow it) is live. Next up: a **saved songbook** that
+keeps your analysed songs - chords, timing, and audio - on the VPS so you can reopen and replay them
+later. See [docs/PROJECT-PLAN.md](docs/PROJECT-PLAN.md) for the full roadmap.
+
+## Design
+
+The visual system of record lives in [design/](design/). The look is "Luxury Quiet" - a cool
+showroom white, Spectral for display, Atkinson Hyperlegible for text - with the two hands always
+distinguished by colour *and* shape so it stays readable for everyone.
