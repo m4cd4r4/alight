@@ -45,6 +45,10 @@ export function Gate({
           </svg>
           <span className="wordmark-name">Alight</span>
         </span>
+        <div className="gate-intro">
+          <p className="gate-tagline">See the chords for any song, light up the keys, and play along.</p>
+          <p className="gate-note">Alight is invite-only while it's in preview - enter your access word to come in.</p>
+        </div>
         <form className="gate-form" onSubmit={submit}>
           <input
             type="password"
