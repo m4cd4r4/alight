@@ -27,8 +27,11 @@ export function ChordStrip({ steps, activeIndex, mode, onSelect, showLyrics, lyr
   const activeRef = useRef<HTMLButtonElement | null>(null);
 
   // Keep the current chord visible as it advances (sideways in strip, down in grid).
+  // scrollIntoView's smooth behaviour is imperative, so the CSS reduced-motion
+  // override can't touch it - honour the preference here.
   useEffect(() => {
-    activeRef.current?.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" });
+    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    activeRef.current?.scrollIntoView({ block: "nearest", inline: "nearest", behavior: reduce ? "auto" : "smooth" });
   }, [activeIndex, mode]);
 
   const last = steps.length - 1;

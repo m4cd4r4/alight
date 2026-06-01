@@ -61,6 +61,7 @@ export function PlayView({
   const [stripLyrics, setStripLyrics] = useState(false);
   const [transpose, setTranspose] = useState(0);
   const [volume, setVolume] = useState(1);
+  const [needTempoHint, setNeedTempoHint] = useState(false);
 
   // The original recording (when one was analysed) - its playback drives the
   // play-along clock; absent for PD-library / paste / UG songs (silent clock).
@@ -98,6 +99,15 @@ export function PlayView({
     [],
   );
 
+  // Pressing Play before there's a tempo used to do nothing. Now it briefly
+  // points the user at Tap tempo (and reminds them stepping always works).
+  const hintTimer = useRef<number | undefined>(undefined);
+  const onBlockedPlay = useCallback(() => {
+    setNeedTempoHint(true);
+    if (hintTimer.current) window.clearTimeout(hintTimer.current);
+    hintTimer.current = window.setTimeout(() => setNeedTempoHint(false), 2100); // matches the pulse (700ms x 3)
+  }, []);
+
   const hasLyrics = !!timeline && timeline.lyrics.length > 0;
   const lyricFor = useCallback(
     (i: number) => {
@@ -118,7 +128,9 @@ export function PlayView({
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       const target = e.target as HTMLElement;
-      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") return;
+      // Let focused controls handle their own keys - otherwise Space on a focused
+      // button both activates it and steps the song (double-fire).
+      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.tagName === "BUTTON") return;
       if (e.code === "Space") {
         e.preventDefault();
         goNext();
@@ -219,7 +231,7 @@ export function PlayView({
         ) : (
           <>
             <div className="chord-row">
-              <ChordLabel now={cur} index={idx} count={count} />
+              <ChordLabel now={cur} index={idx} count={count} showInversion={voicing !== "beginner"} />
               <div className="chord-label-side">
                 <div className="capo">{song.capoNote}</div>
                 <div className="pck-chord-next" aria-label={`Next chord: ${nextStep.name}`}>
@@ -277,15 +289,18 @@ export function PlayView({
             isPlaying={pa.isPlaying}
             canPlay={pa.canPlay}
             onTogglePlay={pa.togglePlay}
+            onBlocked={onBlockedPlay}
           />
           <div className="tempo-controls">
-            <button type="button" className="tap-btn" onClick={pa.tap}>Tap tempo</button>
+            <button type="button" className={needTempoHint ? "tap-btn is-pulsing" : "tap-btn"} onClick={pa.tap}>Tap tempo</button>
             <span className="bpm-readout t-mono">{pa.bpm > 0 ? `${pa.bpm} BPM` : "No tempo"}</span>
             {pa.timed ? (
               <button type="button" className="restart-btn" onClick={pa.restart}>Restart</button>
             ) : null}
           </div>
-          <div className="transport-hint t-text-xs">{hint}</div>
+          <div className="transport-hint t-text-xs" aria-live="polite">
+            {needTempoHint ? "Tap a tempo to enable Play - or use Space / the arrows to step through." : hint}
+          </div>
         </div>
       </main>
 

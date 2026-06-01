@@ -22,8 +22,8 @@
 
   --ink-primary:       oklch(20.0% 0.014 255);  /* chord names, headings */
   --ink-secondary:     oklch(42.0% 0.011 255);  /* body, secondary labels */
-  --ink-tertiary:      oklch(60.0% 0.009 255);  /* metadata, chrome */
-  --ink-ghost:         oklch(75.0% 0.007 255);  /* next-chord preview */
+  --ink-tertiary:      oklch(52.0% 0.010 255);  /* metadata, chrome - AA on surface */
+  --ink-ghost:         oklch(58.0% 0.008 255);  /* next-chord preview - AA-legible */
   --ink-on-dark:       oklch(96.0% 0.004 255);  /* text on black keys */
 
   /* ---- Hand identity --------------------------------------- */
@@ -137,8 +137,8 @@
 
   --ink-primary:       oklch(96.0% 0.005 85);
   --ink-secondary:     oklch(72.0% 0.008 85);
-  --ink-tertiary:      oklch(52.0% 0.010 85);
-  --ink-ghost:         oklch(38.0% 0.012 85);
+  --ink-tertiary:      oklch(60.0% 0.010 85);  /* AA on dark surface */
+  --ink-ghost:         oklch(50.0% 0.012 85);  /* next-chord preview - legible on dark */
   --ink-on-dark:       oklch(96.0% 0.005 85);
 
   --hand-left:         oklch(62.0% 0.090 215);  /* lifted L on dark bg */

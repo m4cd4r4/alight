@@ -155,7 +155,7 @@ function PasteFallback({ onLoad }: { onLoad: LoadHandler }) {
     <div className="paste-column">
       <div className="head">
         <h2>Paste a chord sheet</h2>
-        <div className="sub">For when auto-fetch is down, or the song is not in the library.</div>
+        <div className="sub">Have a chord sheet already? Paste it here - any plain chord sheet works.</div>
       </div>
       <textarea
         className="paste-area"

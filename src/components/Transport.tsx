@@ -42,9 +42,12 @@ interface TransportProps {
   isPlaying: boolean;
   canPlay: boolean;
   onTogglePlay: () => void;
+  /** Called when Play is pressed while it can't play yet (no tempo) - so the
+   *  headline control can guide the user instead of failing silently. */
+  onBlocked?: () => void;
 }
 
-export function Transport({ onPrev, onNext, isPlaying, canPlay, onTogglePlay }: TransportProps) {
+export function Transport({ onPrev, onNext, isPlaying, canPlay, onTogglePlay, onBlocked }: TransportProps) {
   return (
     <div className="pck-transport" role="group" aria-label="Transport">
       <button type="button" onClick={onPrev} aria-label="Previous chord">
@@ -52,9 +55,9 @@ export function Transport({ onPrev, onNext, isPlaying, canPlay, onTogglePlay }: 
       </button>
       <button
         type="button"
-        className="primary"
-        onClick={onTogglePlay}
-        disabled={!canPlay}
+        className={canPlay ? "primary" : "primary is-blocked"}
+        onClick={() => (canPlay ? onTogglePlay() : onBlocked?.())}
+        aria-disabled={!canPlay}
         aria-pressed={isPlaying}
         aria-label={isPlaying ? "Pause" : "Play"}
       >

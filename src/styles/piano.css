@@ -254,6 +254,10 @@
 .pck-transport button svg { width: 18px; height: 18px; }
 .pck-transport button:disabled { opacity: 0.4; cursor: not-allowed; }
 .pck-transport button.primary:disabled:hover { background: var(--ink-primary); }
+/* Play before a tempo exists: dimmed but still clickable, so it can point the
+   user at Tap tempo instead of doing nothing. */
+.pck-transport button.primary.is-blocked { opacity: 0.45; }
+.pck-transport button.primary.is-blocked:hover { background: var(--ink-primary); }
 
 /* ============================================================
    Toggles (segmented and switch)

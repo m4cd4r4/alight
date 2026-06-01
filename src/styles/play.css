@@ -220,8 +220,11 @@ html, body {
 }
 .lyric-line.is-past { opacity: 0.32; }
 .lyric-line.is-active {
-  color: var(--ink-primary);
-  font-weight: 600;
+  /* The keys are the hero, not the lyric. Mark "current" by being the brightest
+     line in the reel (ink-secondary + full opacity), not by matching the chord's
+     near-black ink, which made it compete with the keyboards for the eye. */
+  color: var(--ink-secondary);
+  font-weight: 500;
   opacity: 1;
 }
 
@@ -272,6 +275,17 @@ html, body {
 .tap-btn:hover,
 .restart-btn:hover { color: var(--ink-primary); background: var(--surface-sunken); }
 .tap-btn:active { background: color-mix(in oklch, var(--ink-primary) 10%, transparent); }
+/* Nudged when the user presses Play before tapping a tempo. The border-colour
+   shift carries the cue even when motion is reduced (animation is neutralised). */
+@keyframes tap-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 transparent; }
+  50%      { box-shadow: 0 0 0 3px var(--pulse-soft); }
+}
+.tap-btn.is-pulsing {
+  border-color: color-mix(in oklch, var(--pulse) 60%, var(--hairline));
+  color: var(--ink-primary);
+  animation: tap-pulse 700ms var(--ease-out) 0s 3;
+}
 .tap-btn:focus-visible,
 .restart-btn:focus-visible { outline: 2px solid var(--ink-primary); outline-offset: 2px; }
 .bpm-readout {
