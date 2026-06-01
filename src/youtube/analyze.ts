@@ -9,6 +9,8 @@ import type { Song } from "../music/types.ts";
 
 interface AnalyzeResponse extends ChordMiniAnalysis {
   meta?: { title?: string; artist?: string; duration?: number };
+  /** Signed URL of the original recording (YouTube path); absent for uploads. */
+  audioUrl?: string;
 }
 
 export type AnalyzeResult =
@@ -23,7 +25,7 @@ export function cleanTitle(raw: string): string {
 }
 
 function toResult(data: AnalyzeResponse): AnalyzeResult {
-  const timeline = fromChordMini({ chords: data.chords, beats: data.beats, lyrics: data.lyrics });
+  const timeline = fromChordMini({ chords: data.chords, beats: data.beats, lyrics: data.lyrics }, data.audioUrl);
   if (timeline.chords.length === 0) return { ok: false, error: "No chords were found in that audio." };
   const meta = data.meta ?? {};
   const song: Song = {

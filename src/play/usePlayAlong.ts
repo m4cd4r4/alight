@@ -14,6 +14,7 @@
 // timing maths lives in music/timeline.ts; this is only the React glue.
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { RefObject } from "react";
 import { chordIndexAt, type Timeline } from "../music/timeline.ts";
 
 const BEATS_PER_BAR = 4; // manual auto-advance assumes one chord per 4/4 bar
@@ -65,8 +66,16 @@ export interface PlayAlong {
   tap: () => void;
 }
 
-export function usePlayAlong(timeline: Timeline | null, count: number): PlayAlong {
+export function usePlayAlong(
+  timeline: Timeline | null,
+  count: number,
+  audioRef?: RefObject<HTMLAudioElement | null>,
+): PlayAlong {
   const timed = !!timeline && timeline.chords.length > 0 && timeline.duration > 0;
+  // Audio-backed: a real recording drives the clock instead of the wall clock.
+  // Same timed UI, but currentTime is read from the <audio> element and play /
+  // seek / speed / loop drive it. Falls back to the silent clock when absent.
+  const audioBacked = timed && !!timeline!.audioUrl;
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -87,7 +96,16 @@ export function usePlayAlong(timeline: Timeline | null, count: number): PlayAlon
     setLoop(null);
     setCountingIn(false);
     setCountdown(0);
-  }, [timeline]);
+    const a = audioRef?.current;
+    if (a) {
+      a.pause();
+      try {
+        a.currentTime = 0;
+      } catch {
+        /* not seekable yet */
+      }
+    }
+  }, [timeline, audioRef]);
 
   const activeIndex = timed
     ? Math.max(0, chordIndexAt(timeline!.chords, currentTime))
@@ -105,10 +123,60 @@ export function usePlayAlong(timeline: Timeline | null, count: number): PlayAlon
   activeIndexRef.current = activeIndex;
   bpmRef.current = bpm;
 
+  // Previous audio time, so the soft A-B loop wraps only when playback crosses
+  // the loop end (seeking out of the range releases it, as in the manual modes).
+  const audioPrevRef = useRef(0);
+
+  // One place to move the playhead: keep React state and the <audio> element in
+  // step so seeking works whether or not the recording is playing.
+  const seek = useCallback(
+    (seconds: number) => {
+      setCurrentTime(seconds);
+      // Move the loop tracker too, so seeking out of the A-B range releases the
+      // loop instead of the next frame reading it as a cross-the-end wrap.
+      audioPrevRef.current = seconds;
+      const a = audioRef?.current;
+      if (a) {
+        try {
+          a.currentTime = seconds;
+        } catch {
+          /* not seekable yet */
+        }
+      }
+    },
+    [audioRef],
+  );
+
+  // Audio-backed clock: the <audio> element is the source of truth. Read its
+  // currentTime each frame for a smooth cursor (coarser than rAF would be via
+  // the native `timeupdate` event), and wrap the soft loop by seeking it.
+  useEffect(() => {
+    if (!audioBacked || !isPlaying) return;
+    let raf = 0;
+    const tick = () => {
+      const a = audioRef?.current;
+      if (a) {
+        const lp = loopRef.current;
+        if (lp) {
+          const loopEnd = timeline!.chords[lp.end]?.end ?? timeline!.duration;
+          const loopStart = timeline!.chords[lp.start]?.start ?? 0;
+          if (audioPrevRef.current < loopEnd && a.currentTime >= loopEnd) {
+            a.currentTime = loopStart;
+          }
+        }
+        audioPrevRef.current = a.currentTime;
+        setCurrentTime(a.currentTime);
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [audioBacked, isPlaying, timeline, audioRef]);
+
   // Timed clock: advance currentTime by real elapsed time (scaled by speed) each
   // frame, wrapping at the loop end and stopping at the song's end.
   useEffect(() => {
-    if (!timed || !isPlaying) return;
+    if (!timed || audioBacked || !isPlaying) return;
     let raf = 0;
     let last = performance.now();
     const tick = (now: number) => {
@@ -174,25 +242,52 @@ export function usePlayAlong(timeline: Timeline | null, count: number): PlayAlon
     return () => clearInterval(id);
   }, [countingIn]);
 
+  // Reflect play/pause onto the recording (count-in flips isPlaying when done).
+  useEffect(() => {
+    if (!audioBacked) return;
+    const a = audioRef?.current;
+    if (!a) return;
+    if (isPlaying) a.play().catch(() => { /* needs a user gesture / still buffering */ });
+    else a.pause();
+  }, [audioBacked, isPlaying, audioRef]);
+
+  // Slow-practice without the chipmunk effect: keep pitch when the rate changes.
+  useEffect(() => {
+    const a = audioRef?.current;
+    if (!a) return;
+    a.playbackRate = speed;
+    a.preservesPitch = true;
+  }, [speed, audioBacked, audioRef]);
+
+  // When the recording finishes, stop (the loop, when set, prevents reaching here).
+  useEffect(() => {
+    if (!audioBacked) return;
+    const a = audioRef?.current;
+    if (!a) return;
+    const onEnded = () => setIsPlaying(false);
+    a.addEventListener("ended", onEnded);
+    return () => a.removeEventListener("ended", onEnded);
+  }, [audioBacked, audioRef, timeline]);
+
   const next = useCallback(() => {
     if (timed) {
       const i = chordIndexAt(timeline!.chords, timeRef.current);
       const target = timeline!.chords[Math.min(i + 1, timeline!.chords.length - 1)];
-      if (target) setCurrentTime(target.start);
+      if (target) seek(target.start);
     } else if (count > 0) {
       setManualIdx((i) => (i + 1) % count);
     }
-  }, [timed, timeline, count]);
+  }, [timed, timeline, count, seek]);
 
   const prev = useCallback(() => {
     if (timed) {
       const i = chordIndexAt(timeline!.chords, timeRef.current);
       const target = timeline!.chords[Math.max(i - 1, 0)];
-      if (target) setCurrentTime(target.start);
+      if (target) seek(target.start);
     } else if (count > 0) {
       setManualIdx((i) => (i - 1 + count) % count);
     }
-  }, [timed, timeline, count]);
+  }, [timed, timeline, count, seek]);
 
   const goTo = useCallback(
     (index: number) => {
@@ -200,18 +295,18 @@ export function usePlayAlong(timeline: Timeline | null, count: number): PlayAlon
       if (timed) {
         const clamped = Math.min(Math.max(index, 0), timeline!.chords.length - 1);
         const target = timeline!.chords[clamped];
-        if (target) setCurrentTime(target.start);
+        if (target) seek(target.start);
       } else {
         setManualIdx(((index % count) + count) % count);
       }
     },
-    [timed, timeline, count],
+    [timed, timeline, count, seek],
   );
 
   const restart = useCallback(() => {
-    if (timed) setCurrentTime(0);
+    if (timed) seek(0);
     else setManualIdx(0);
-  }, [timed]);
+  }, [timed, seek]);
 
   const setLoopStart = useCallback(() => {
     const s = activeIndexRef.current;

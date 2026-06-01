@@ -11,7 +11,7 @@
 // triad, an "All chords" overview shows the whole song, and transpose / speed /
 // loop controls help you actually sit down and play it.
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { prettify } from "../music/notes.ts";
 import { lyricIndexAt, timelineSymbols, type Timeline } from "../music/timeline.ts";
 import { easiestShift, keyLabel, transposeSymbols } from "../music/transpose.ts";
@@ -60,6 +60,12 @@ export function PlayView({
   const [allChords, setAllChords] = useState(false);
   const [stripLyrics, setStripLyrics] = useState(false);
   const [transpose, setTranspose] = useState(0);
+  const [volume, setVolume] = useState(1);
+
+  // The original recording (when one was analysed) - its playback drives the
+  // play-along clock; absent for PD-library / paste / UG songs (silent clock).
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const audioUrl = timeline?.audioUrl;
 
   const disabledVoicings = song.lockVoicing
     ? VOICING_OPTIONS.map((o) => o.value).filter((v) => v !== song.lockVoicing)
@@ -77,7 +83,7 @@ export function PlayView({
   const steps = useMemo(() => voiceSong(shifted, voicing), [shifted, voicing]);
   const count = steps.length;
 
-  const pa = usePlayAlong(timeline, count);
+  const pa = usePlayAlong(timeline, count, audioRef);
 
   const idx = count ? Math.min(pa.activeIndex, count - 1) : 0;
   const cur = steps[idx];
@@ -103,6 +109,11 @@ export function PlayView({
     },
     [timeline],
   );
+
+  useEffect(() => {
+    const a = audioRef.current;
+    if (a) a.volume = volume;
+  }, [volume, audioUrl]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -149,6 +160,7 @@ export function PlayView({
 
   return (
     <div className="play-page">
+      {audioUrl ? <audio ref={audioRef} src={audioUrl} preload="auto" style={{ display: "none" }} /> : null}
       <header className="topbar">
         <div className="topbar-left">
           <a
@@ -281,6 +293,22 @@ export function PlayView({
         <div className="footer-controls">
           <Segmented label="Voicing" options={VOICING_OPTIONS} value={voicing} onChange={setVoicing} disabledValues={disabledVoicings} />
           <Segmented label="Speed" options={SPEED_OPTIONS} value={String(pa.speed)} onChange={(v) => pa.setSpeed(Number(v))} />
+
+          {audioUrl ? (
+            <div className="ctl-block">
+              <div className="t-label-caps">Volume</div>
+              <input
+                className="pck-volume"
+                type="range"
+                min={0}
+                max={1}
+                step={0.01}
+                value={volume}
+                onChange={(e) => setVolume(Number(e.target.value))}
+                aria-label="Playback volume"
+              />
+            </div>
+          ) : null}
 
           <div className="ctl-block">
             <div className="t-label-caps">Key</div>

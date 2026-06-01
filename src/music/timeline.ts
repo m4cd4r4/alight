@@ -52,6 +52,13 @@ export interface Timeline {
   lyrics: TimedLyricLine[];
   beats: Beats | null;
   source: "analysis" | "manual";
+  /**
+   * Signed, time-limited URL of the original recording, when one is available
+   * (the YouTube analysis path). When set, the Play view plays it as the clock
+   * master; when absent, play-along stays on the silent clock. Owner-only - the
+   * URL is mintable only behind the app gate and expires.
+   */
+  audioUrl?: string;
 }
 
 // ---- ChordMini wire shapes (only the fields Alight reads) --------------------
@@ -191,7 +198,7 @@ function mapLyrics(p?: ChordMiniLyricsPayload | null): TimedLyricLine[] {
 }
 
 /** Map a ChordMini analysis (any subset of its three payloads) to a Timeline. */
-export function fromChordMini(a: ChordMiniAnalysis): Timeline {
+export function fromChordMini(a: ChordMiniAnalysis, audioUrl?: string): Timeline {
   const chords = collapseTimedChords(a.chords?.chords ?? []);
   const lyrics = mapLyrics(a.lyrics);
 
@@ -212,7 +219,9 @@ export function fromChordMini(a: ChordMiniAnalysis): Timeline {
   const duration =
     Number(a.chords?.duration) || (ends.length ? Math.max(0, ...ends) : 0);
 
-  return { duration, chords, lyrics, beats, source: "analysis" };
+  const timeline: Timeline = { duration, chords, lyrics, beats, source: "analysis" };
+  if (audioUrl) timeline.audioUrl = audioUrl; // omit the key entirely when absent
+  return timeline;
 }
 
 // ---- Pure selectors used by the Play view ------------------------------------

@@ -17,7 +17,7 @@ import subprocess
 import time
 import uuid
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, abort, jsonify, request, send_file
 from utils.paths import AUDIO_DIR
 
 bp = Blueprint("alight_ingest", __name__)
@@ -146,3 +146,24 @@ def yt_download():
         "artist": artist,
         "duration": duration,
     })
+
+
+# uuid4().hex names from yt_download: exactly 32 lowercase hex chars + ".mp3".
+AUDIO_NAME_RE = re.compile(r"[0-9a-f]{32}\.mp3")
+
+
+@bp.route("/audio/<name>", methods=["GET"])
+def serve_audio(name):
+    """Serve a downloaded mp3 for in-app playback, with HTTP Range support.
+
+    Auth: none here, exactly like yt_download - nginx gates this route with a
+    signed, time-limited secure_link URL (a browser <audio> GET can't carry the
+    bearer token). We still hard-constrain `name` to the yt_download naming
+    scheme so this can never read anything but a freshly-downloaded clip.
+    """
+    if not AUDIO_NAME_RE.fullmatch(name):
+        abort(404)
+    path = AUDIO_DIR / name
+    if not path.is_file():
+        abort(404)
+    return send_file(path, mimetype="audio/mpeg", conditional=True)
