@@ -41,6 +41,22 @@ const SPEED_OPTIONS = [
 const MAX_TRANSPOSE = 11;
 const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
 
+// Phones can't fit the two md keyboards side by side (~770px); drop to the sm
+// size (which keeps note labels) so each hand fits when the CSS stacks them.
+function useCompactViewport(): boolean {
+  const [compact, setCompact] = useState(
+    () => typeof window !== "undefined" && !!window.matchMedia?.("(max-width: 640px)").matches,
+  );
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 640px)");
+    const onChange = () => setCompact(mq.matches);
+    onChange(); // resync in case the viewport changed between render and effect
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+  return compact;
+}
+
 export function PlayView({
   song,
   timeline = null,
@@ -67,6 +83,7 @@ export function PlayView({
   // play-along clock; absent for PD-library / paste / UG songs (silent clock).
   const audioRef = useRef<HTMLAudioElement>(null);
   const audioUrl = timeline?.audioUrl;
+  const compact = useCompactViewport();
 
   const disabledVoicings = song.lockVoicing
     ? VOICING_OPTIONS.map((o) => o.value).filter((v) => v !== song.lockVoicing)
@@ -259,14 +276,14 @@ export function PlayView({
                   <span className="marker"><svg viewBox="0 0 12 12"><rect x="2" y="2" width="8" height="8" fill="currentColor" /></svg></span>
                   <span>Left hand</span>
                 </div>
-                <Keyboard hand="left" startNote="C2" endNote="E3" nowNotes={cur.left} nextNotes={nextStep.left} size="md" showFingering={fingering} />
+                <Keyboard hand="left" startNote="C2" endNote="E3" nowNotes={cur.left} nextNotes={nextStep.left} size={compact ? "sm" : "md"} showFingering={fingering} />
               </div>
               <div className="hand-block">
                 <div className="hand-header right">
                   <span className="marker"><svg viewBox="0 0 12 12"><path d="M6 10 L2 3 L10 3 Z" fill="currentColor" /></svg></span>
                   <span>Right hand</span>
                 </div>
-                <Keyboard hand="right" startNote="F3" endNote="B4" nowNotes={cur.right} nextNotes={nextStep.right} size="md" showFingering={fingering} />
+                <Keyboard hand="right" startNote="F3" endNote="B4" nowNotes={cur.right} nextNotes={nextStep.right} size={compact ? "sm" : "md"} showFingering={fingering} />
               </div>
             </div>
 
