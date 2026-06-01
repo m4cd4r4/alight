@@ -464,5 +464,34 @@ html, body {
   .chord-strip.is-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 640px) {
+  .play-page { padding: 0 16px; }
+
+  /* Stack the two hands so each fits a phone (keys are already sm via the size
+     prop), and centre them. */
+  .keyboards { flex-direction: column; align-items: center; gap: 20px; }
+  .hand-block { align-items: center; }
+
+  /* Hero chord above the "next" cue instead of side-by-side; smaller name. */
+  .chord-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .chord-label .pck-chord-now .name { font-size: clamp(48px, 15vw, 72px); }
+  .chord-label-side { align-items: flex-start; width: 100%; }
+  .chord-label-side .capo { max-width: 100%; text-align: left; }
+  .lands-in { width: 100%; align-items: flex-start; }
+
+  /* Footer: one control group per full-width row, comfortable tap targets. */
+  .play-footer { padding: 16px 0 24px; }
+  .footer-controls { flex-direction: column; align-items: stretch; gap: 20px; width: 100%; }
+  .footer-controls .pck-segmented { width: 100%; }
+  .footer-controls .pck-segmented button { flex: 1; min-height: 44px; }
+  .transpose-ctl, .loop-ctl { flex-wrap: wrap; }
+  .transpose-ctl button,
+  .loop-ctl button,
+  .easy-key-btn,
+  .tap-btn,
+  .restart-btn { min-height: 44px; }
+  .pck-transport button { min-height: 44px; min-width: 44px; }
+  .ctl-block.toggles { gap: 20px 16px; }
+  .pck-switch { min-height: 44px; }
+
   .chord-strip.is-grid { grid-template-columns: 1fr; max-height: max(160px, calc(100vh - 280px)); }
 }

@@ -39,6 +39,28 @@
   .load-page { padding: 0 24px; }
 }
 
+@media (max-width: 640px) {
+  .load-page,
+  .gate-page { padding: 0 16px; }
+  .load-stage { padding: 32px 0 64px; }
+  .load-stage .heading h1 { font-size: 34px; }
+
+  /* Stack inputs above their buttons and give everything thumb-sized targets. */
+  .analyze-field { flex-direction: column; align-items: stretch; }
+  .analyze-field input { min-height: 44px; }
+  .analyze-field .btn-primary { width: 100%; min-height: 44px; }
+  .gate-form { flex-direction: column; align-items: stretch; width: 100%; max-width: 320px; }
+  .gate-form input { width: 100%; min-height: 44px; box-sizing: border-box; }
+  .gate-form .btn-primary { width: 100%; min-height: 44px; }
+  .paste-actions { flex-direction: column; align-items: stretch; }
+  .paste-actions .btn-primary { width: 100%; min-height: 44px; }
+
+  /* Smaller YouTube result thumbnails so the title keeps room. */
+  .yt-result { grid-template-columns: 88px 1fr; }
+  .yt-result img,
+  .yt-thumb-fallback { width: 88px; height: 50px; }
+}
+
 .load-stage .heading {
   display: flex;
   flex-direction: column;
@@ -451,6 +473,7 @@
 .paste-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 8px; }
 .btn-primary {
   appearance: none;
+  box-sizing: border-box;  /* so width:100% on phones includes the padding (no overflow) */
   background: var(--ink-primary);
   color: var(--surface-base);
   border: 0;
