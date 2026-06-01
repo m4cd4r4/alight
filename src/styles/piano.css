@@ -286,6 +286,14 @@
 .pck-segmented button:hover:not([aria-pressed="true"]):not(:disabled) { color: var(--ink-primary); }
 .pck-segmented button:disabled { opacity: 0.35; cursor: not-allowed; }
 
+/* Playback volume slider (shown only when a recording backs the song). */
+.pck-volume {
+  width: 104px;
+  height: 28px;
+  cursor: pointer;
+  accent-color: var(--ink-primary);
+}
+
 .pck-switch {
   display: inline-flex;
   align-items: center;

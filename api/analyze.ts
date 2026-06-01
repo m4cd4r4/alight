@@ -18,6 +18,7 @@
 //   Upload:  recognize-chords -> detect-beats  (lyrics only if title/artist given)
 // Download + chords are required; beats + lyrics are best-effort.
 
+import { createHash } from "node:crypto";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
 // Pro plan: allow a long synchronous analysis. yt-download caps song length, so
@@ -37,6 +38,11 @@ const LYRICS_TIMEOUT_MS = 20_000;
 // parses JSON), so the decoded audio must leave room for the ~33% base64
 // inflation under Vercel's ~4.5MB body limit.
 const MAX_UPLOAD_BYTES = 3_200_000;
+// In-app playback of the downloaded recording. We hand the browser a signed,
+// time-limited URL straight to the backend's /audio/<id>.mp3 (nginx secure_link
+// verifies it) - the bytes never flow through this function. The TTL matches the
+// backend's 1h reap window: the file dies at the same time the URL would.
+const AUDIO_URL_TTL_S = 3600;
 
 interface YtDownload {
   audio_path: string;
@@ -54,6 +60,30 @@ function backendBase(): string | null {
 function authHeader(): Record<string, string> {
   const token = process.env.CHORDMINI_TOKEN;
   return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+/**
+ * Mint an nginx secure_link URL for the downloaded mp3 so the browser's <audio>
+ * element can stream it directly (it cannot send the bearer token). The md5 must
+ * match the conf's `secure_link_md5 "$secure_link_expires$uri __SECRET__"`, i.e.
+ * md5(`${expires}${uri} ${secret}`) as URL-safe base64 without padding. Returns
+ * undefined when signing is not configured - playback just stays silent then.
+ */
+function signedAudioUrl(audioPath: string): string | undefined {
+  const secret = process.env.AUDIO_SIGNING_SECRET;
+  const base = backendBase();
+  if (!secret || !base) return undefined;
+  const name = audioPath.split(/[\\/]/).pop() || "";
+  if (!/^[0-9a-f]{32}\.mp3$/.test(name)) return undefined; // yt_download's uuid4().hex naming
+  const uri = `/audio/${name}`;
+  const expires = Math.floor(Date.now() / 1000) + AUDIO_URL_TTL_S;
+  const md5 = createHash("md5")
+    .update(`${expires}${uri} ${secret}`)
+    .digest("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=/g, "");
+  return `${base}${uri}?md5=${md5}&expires=${expires}`;
 }
 
 function fail(res: VercelResponse, status: number, code: string, message: string): void {
@@ -141,6 +171,7 @@ async function analyse(
   title: string,
   artist: string,
   duration: number,
+  audioUrl?: string,
 ): Promise<void> {
   const chords = await chordCall();
   if (chords.status !== 200 || !chords.json) {
@@ -167,7 +198,7 @@ async function analyse(
   }
 
   res.setHeader("Cache-Control", "no-store");
-  res.status(200).json({ chords: chords.json, beats, lyrics, meta: { title, artist, duration } });
+  res.status(200).json({ chords: chords.json, beats, lyrics, meta: { title, artist, duration }, audioUrl });
 }
 
 async function handleYoutube(res: VercelResponse, youtubeUrl: string): Promise<void> {
@@ -195,6 +226,7 @@ async function handleYoutube(res: VercelResponse, youtubeUrl: string): Promise<v
     d.title || "",
     d.artist || "",
     Number(d.duration) || 0,
+    signedAudioUrl(audioPath),
   );
 }
 
