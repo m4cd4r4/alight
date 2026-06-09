@@ -3,12 +3,12 @@
 <p align="center"><strong>See exactly which piano keys to press - one chord at a time.</strong></p>
 
 <p align="center">
-  <img src="docs/screenshots/play-dark.png" alt="Alight Play view: two mini keyboards light up the exact keys to press for each chord" width="860">
+  <img src="docs/screenshots/hero.png" alt="Alight Play view: glowing keyboards light the exact keys, with a grand staff and the lyric line above, and the chord controls below" width="860">
 </p>
 
 Alight turns a song into two glowing mini-keyboards - one for each hand - that light up the
-precise keys for every chord. No sheet music, no theory homework. Sit down, look at the screen,
-and play the song that's already in your head.
+precise keys for every chord. No need to read a note, no theory homework. Sit down, look at the
+screen, and play the song that's already in your head.
 
 **Live:** <https://alight-rho.vercel.app> (gated - ask Macdara for the password)
 
@@ -18,15 +18,21 @@ and play the song that's already in your head.
 
 - 🎹 **What you see is what you press.** The lit keys are exactly the keys - left-hand bass on one
   keyboard, right-hand chord on the other, with note names, finger numbers, and a shape marker so
-  the hands never get mixed up.
-- 🌱 **Beginner-first.** A "Beginner" voicing simplifies every chord to a friendly triad, and one
-  tap finds the easiest key to play it in.
+  the hands never get mixed up. The chord you're on *glows*.
+- 🎼 **Read it on the staff, too.** A little grand staff above the keyboards shows the chord's exact
+  notes on treble and bass clefs - the same notes the keys light - so notation reading comes for free.
+- 🔊 **Hear every chord.** Flip on Sound for a sampled grand piano: each chord plays as you move
+  through the song, and you can tap any key to hear just that note.
+- 🎤 **Words, in time.** Lyrics scroll line-by-line under the chord name and along the strip - now on
+  the built-in songs, not only analysed recordings.
+- 🌱 **Beginner-first.** A "Beginner" voicing simplifies every chord to a friendly triad, one tap
+  finds the easiest key, and a calm "you played it through" greets you at the finish.
 - 🎧 **Play along to the real recording.** Paste a YouTube link and Alight pulls the chords, beats,
   and synced lyrics - then plays the song while the keyboards follow it in time. Slow it to 0.75x
   for practice (the pitch stays put) and loop the tricky bar.
-- 📚 **A built-in shelf of songs.** Nursery rhymes, folk tunes, carols, and classical themes are
-  bundled right in - all public domain, all instant, nothing to break.
-- 🌗 **Light and dark, and it's quick.** A calm "showroom" look by day, glowing keys by night.
+- 📚 **80 public-domain songs built in.** Nursery rhymes, folk tunes, sea shanties, spirituals,
+  carols, rounds, and classical themes - most with singable lyrics, all instant, nothing to break.
+- 🌗 **Light and dark.** A calm "showroom" look by day, glowing keys by night.
 
 ## A look around
 
