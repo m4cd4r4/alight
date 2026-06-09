@@ -8,7 +8,7 @@
   /* Sits in the empty middle of the chord row (name | staff | next) so it no
      longer takes a band of its own - pulls the keyboards + transport up. */
   flex: 0 1 auto;
-  align-self: center;
+  align-self: flex-start;
   width: clamp(168px, 22vw, 220px);
 }
 .chord-staff svg {

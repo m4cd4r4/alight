@@ -327,7 +327,12 @@ export function PlayView({
         ) : (
           <>
             <div className="chord-row">
-              <ChordLabel now={cur} index={idx} count={count} showInversion={voicing !== "beginner"} />
+              <div className="now-block">
+                <ChordLabel now={cur} index={idx} count={count} showInversion={voicing !== "beginner"} />
+                {timeline && timeline.lyrics.length > 0 ? (
+                  <LyricsPanel lines={timeline.lyrics} activeIndex={lyricIdx} />
+                ) : null}
+              </div>
               <ChordStaff left={cur.left} right={cur.right} chordName={cur.name} />
               <div className="chord-label-side">
                 <div className="capo">{song.capoNote}</div>
@@ -345,10 +350,6 @@ export function PlayView({
                 ) : null}
               </div>
             </div>
-
-            {timeline && timeline.lyrics.length > 0 ? (
-              <LyricsPanel lines={timeline.lyrics} activeIndex={lyricIdx} />
-            ) : null}
 
             <div className="keyboards">
               <div className="hand-block">
@@ -388,29 +389,86 @@ export function PlayView({
           </div>
         ) : null}
 
-        <div className="transport-row">
-          <Transport
-            onPrev={goPrev}
-            onNext={goNext}
-            isPlaying={pa.isPlaying}
-            canPlay={pa.canPlay}
-            onTogglePlay={() => {
-              dismissCoach();
-              if (sound) piano.prime();
-              pa.togglePlay();
-            }}
-            onBlocked={onBlockedPlay}
-          />
-          <div className="tempo-controls">
-            <button type="button" className={needTempoHint ? "tap-btn is-pulsing" : "tap-btn"} onClick={pa.tap}>Tap tempo</button>
-            <span className="bpm-readout t-mono">{pa.bpm > 0 ? `${pa.bpm} BPM` : "No tempo"}</span>
-            {pa.timed ? (
-              <button type="button" className="restart-btn" onClick={pa.restart}>Restart</button>
+        {/* Control deck: transport in the centre, practice options in the
+            previously-empty flanks; toggles as a slim row below. Replaces the
+            old footer band so everything fits above the fold. */}
+        <div className="control-deck">
+          <div className="deck-side deck-left">
+            <Segmented label="Voicing" options={VOICING_OPTIONS} value={voicing} onChange={setVoicing} disabledValues={disabledVoicings} />
+            <Segmented label="Speed" options={SPEED_OPTIONS} value={String(pa.speed)} onChange={(v) => pa.setSpeed(Number(v))} />
+            {audioUrl ? (
+              <div className="ctl-block" role="group" aria-label="Volume">
+                <div className="t-label-caps">Volume</div>
+                <input
+                  className="pck-volume"
+                  type="range"
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  value={volume}
+                  onChange={(e) => setVolume(Number(e.target.value))}
+                  aria-label="Playback volume"
+                />
+              </div>
             ) : null}
           </div>
-          <div className="transport-hint t-text-xs" aria-live="polite">
-            {needTempoHint ? "Tap a tempo to enable Play - or use Space / the arrows to step through." : hint}
+
+          <div className="deck-center">
+            <Transport
+              onPrev={goPrev}
+              onNext={goNext}
+              isPlaying={pa.isPlaying}
+              canPlay={pa.canPlay}
+              onTogglePlay={() => {
+                dismissCoach();
+                if (sound) piano.prime();
+                pa.togglePlay();
+              }}
+              onBlocked={onBlockedPlay}
+            />
+            <div className="tempo-controls">
+              <button type="button" className={needTempoHint ? "tap-btn is-pulsing" : "tap-btn"} onClick={pa.tap}>Tap tempo</button>
+              <span className="bpm-readout t-mono">{pa.bpm > 0 ? `${pa.bpm} BPM` : "No tempo"}</span>
+              {pa.timed ? (
+                <button type="button" className="restart-btn" onClick={pa.restart}>Restart</button>
+              ) : null}
+            </div>
+            <div className="transport-hint t-text-xs" aria-live="polite">
+              {needTempoHint ? "Tap a tempo to enable Play - or use Space / the arrows to step through." : hint}
+            </div>
           </div>
+
+          <div className="deck-side deck-right">
+            <div className="ctl-block" role="group" aria-label="Key">
+              <div className="t-label-caps">Key</div>
+              <div className="transpose-ctl">
+                <button type="button" onClick={() => setTransposeBy(-1)} aria-label="Transpose down a semitone">−</button>
+                <span className="key-readout t-mono" aria-label="Current key">{keyLabel(chordSymbols, transpose)}</span>
+                <button type="button" onClick={() => setTransposeBy(1)} aria-label="Transpose up a semitone">+</button>
+                <button type="button" className="easy-key-btn" onClick={() => setTranspose(easiestShift(chordSymbols))}>
+                  Easy key
+                </button>
+              </div>
+            </div>
+            <div className="ctl-block" role="group" aria-label={`Loop${pa.loop ? ` ${pa.loop.start + 1} to ${pa.loop.end + 1}` : ""}`}>
+              <div className="t-label-caps">Loop {pa.loop ? `${pa.loop.start + 1}-${pa.loop.end + 1}` : ""}</div>
+              <div className="loop-ctl">
+                <button type="button" onClick={pa.setLoopStart}>Set A</button>
+                <button type="button" onClick={pa.setLoopEnd}>Set B</button>
+                <button type="button" onClick={pa.clearLoop} disabled={!pa.loop}>Clear</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="deck-toggles" role="group" aria-label="Display and sound options">
+          <ToggleSwitch checked={sound} onChange={onSound}>Sound</ToggleSwitch>
+          <ToggleSwitch checked={allChords} onChange={setAllChords}>All chords</ToggleSwitch>
+          {hasLyrics ? (
+            <ToggleSwitch checked={stripLyrics} onChange={setStripLyrics}>Lyrics</ToggleSwitch>
+          ) : null}
+          <ToggleSwitch checked={pa.countInEnabled} onChange={pa.setCountInEnabled}>Count-in</ToggleSwitch>
+          <ToggleSwitch checked={fingering} onChange={setFingering}>Fingering</ToggleSwitch>
         </div>
 
         {pa.ended ? (
@@ -432,60 +490,6 @@ export function PlayView({
           </div>
         ) : null}
       </main>
-
-      <footer className="play-footer">
-        <div className="footer-controls">
-          <Segmented label="Voicing" options={VOICING_OPTIONS} value={voicing} onChange={setVoicing} disabledValues={disabledVoicings} />
-          <Segmented label="Speed" options={SPEED_OPTIONS} value={String(pa.speed)} onChange={(v) => pa.setSpeed(Number(v))} />
-
-          {audioUrl ? (
-            <div className="ctl-block">
-              <div className="t-label-caps">Volume</div>
-              <input
-                className="pck-volume"
-                type="range"
-                min={0}
-                max={1}
-                step={0.01}
-                value={volume}
-                onChange={(e) => setVolume(Number(e.target.value))}
-                aria-label="Playback volume"
-              />
-            </div>
-          ) : null}
-
-          <div className="ctl-block">
-            <div className="t-label-caps">Key</div>
-            <div className="transpose-ctl">
-              <button type="button" onClick={() => setTransposeBy(-1)} aria-label="Transpose down a semitone">−</button>
-              <span className="key-readout t-mono" aria-label="Current key">{keyLabel(chordSymbols, transpose)}</span>
-              <button type="button" onClick={() => setTransposeBy(1)} aria-label="Transpose up a semitone">+</button>
-              <button type="button" className="easy-key-btn" onClick={() => setTranspose(easiestShift(chordSymbols))}>
-                Easy key
-              </button>
-            </div>
-          </div>
-
-          <div className="ctl-block">
-            <div className="t-label-caps">Loop {pa.loop ? `${pa.loop.start + 1}-${pa.loop.end + 1}` : ""}</div>
-            <div className="loop-ctl">
-              <button type="button" onClick={pa.setLoopStart}>Set A</button>
-              <button type="button" onClick={pa.setLoopEnd}>Set B</button>
-              <button type="button" onClick={pa.clearLoop} disabled={!pa.loop}>Clear</button>
-            </div>
-          </div>
-
-          <div className="ctl-block toggles">
-            <ToggleSwitch checked={sound} onChange={onSound}>Sound</ToggleSwitch>
-            <ToggleSwitch checked={allChords} onChange={setAllChords}>All chords</ToggleSwitch>
-            {hasLyrics ? (
-              <ToggleSwitch checked={stripLyrics} onChange={setStripLyrics}>Lyrics</ToggleSwitch>
-            ) : null}
-            <ToggleSwitch checked={pa.countInEnabled} onChange={pa.setCountInEnabled}>Count-in</ToggleSwitch>
-            <ToggleSwitch checked={fingering} onChange={setFingering}>Fingering</ToggleSwitch>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

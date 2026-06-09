@@ -1,5 +1,5 @@
-// Secondary controls in the footer: the Simple/Full voicing toggle and the
-// fingering switch. Theme lives in the top bar.
+// Secondary controls in the control deck: the Simple/Full voicing toggle and
+// the fingering switch. Theme lives in the top bar.
 
 import type { ReactNode } from "react";
 
