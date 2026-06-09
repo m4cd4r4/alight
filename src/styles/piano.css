@@ -62,7 +62,8 @@
   font-variant-numeric: tabular-nums;
   transition: background-color var(--dur-chord) var(--ease-out),
               color var(--dur-chord) var(--ease-out),
-              border-color var(--dur-chord) var(--ease-out);
+              border-color var(--dur-chord) var(--ease-out),
+              box-shadow var(--dur-chord) var(--ease-out);
 }
 
 .pck-white {
@@ -143,6 +144,27 @@
 .pck-key.is-right.is-now .pck-marker { opacity: 1; color: var(--hand-right-ink); }
 .pck-key.is-right.is-now .pck-note,
 .pck-key.is-right.is-now .pck-finger { opacity: 1; }
+
+/* The lit key glows in its hand colour - the app is named for this moment.
+   The halo rides the same crossfade as the fill (box-shadow is transitioned). */
+.pck-key.is-now {
+  box-shadow:
+    0 0 0 1px color-mix(in oklch, var(--glow-color) 55%, transparent),
+    0 0 14px 1px color-mix(in oklch, var(--glow-color) 50%, transparent),
+    inset 0 3px 0 color-mix(in oklch, white 24%, transparent);
+}
+.pck-key.is-left.is-now  { --glow-color: var(--hand-left); }
+.pck-key.is-right.is-now { --glow-color: var(--hand-right); }
+/* Lift a lit white key above its un-lit white neighbours so the halo isn't
+   clipped - but stay below black keys (z-index 2) so they still overlap. */
+.pck-white.is-now { position: relative; z-index: 1; }
+/* Lifted hand colours on the dark canvas carry a stronger halo. */
+[data-theme="dark"] .pck-key.is-now {
+  box-shadow:
+    0 0 0 1px color-mix(in oklch, var(--glow-color) 70%, transparent),
+    0 0 20px 3px color-mix(in oklch, var(--glow-color) 60%, transparent),
+    inset 0 3px 0 color-mix(in oklch, white 20%, transparent);
+}
 
 /* Left, next preview — soft fill, marker outline only */
 .pck-key.is-left.is-next {

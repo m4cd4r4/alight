@@ -19,6 +19,7 @@ import type { Song, Voicing } from "../music/types.ts";
 import { voiceSong } from "../music/voicing.ts";
 import { usePlayAlong } from "../play/usePlayAlong.ts";
 import { ChordLabel } from "./ChordLabel.tsx";
+import { ChordStaff } from "./ChordStaff.tsx";
 import { ChordStrip } from "./ChordStrip.tsx";
 import { Segmented, ToggleSwitch } from "./Controls.tsx";
 import { Keyboard } from "./Keyboard.tsx";
@@ -269,6 +270,8 @@ export function PlayView({
             {timeline && timeline.lyrics.length > 0 ? (
               <LyricsPanel lines={timeline.lyrics} activeIndex={lyricIdx} />
             ) : null}
+
+            <ChordStaff left={cur.left} right={cur.right} chordName={cur.name} />
 
             <div className="keyboards">
               <div className="hand-block">
