@@ -455,6 +455,122 @@ html, body {
 .key-readout { min-width: 34px; text-align: center; font-size: 15px; color: var(--ink-primary); }
 .ctl-block.toggles { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 16px; }
 
+/* First-run coach cue: a calm one-liner above the transport, dismissed for good. */
+.play-coach {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 4px auto 0;
+  padding: 8px 14px;
+  max-width: 560px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-1);
+  background: var(--surface-raised);
+  color: var(--ink-secondary);
+  font-family: var(--font-text);
+  font-size: 13px;
+}
+.play-coach kbd {
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-size: 12px;
+  padding: 1px 6px;
+  border: 1px solid var(--hairline-strong);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  background: var(--surface-base);
+  color: var(--ink-primary);
+}
+.play-coach-dismiss {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--ink-secondary);
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 4px 6px;
+}
+.play-coach-dismiss:hover { color: var(--ink-primary); }
+
+/* Completion moment: a calm full-screen overlay, no confetti. */
+.play-done {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: color-mix(in oklch, var(--surface-base) 70%, transparent);
+  backdrop-filter: blur(2px);
+}
+.play-done-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  max-width: 420px;
+  padding: 28px 32px;
+  text-align: center;
+  background: var(--surface-raised);
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--radius-2, 14px);
+  box-shadow: var(--shadow-pop, 0 14px 44px rgba(0, 0, 0, 0.18));
+}
+.play-done-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 400;
+  color: var(--ink-primary);
+}
+.play-done-sub {
+  margin: 0 0 10px;
+  font-family: var(--font-text);
+  font-size: 15px;
+  color: var(--ink-secondary);
+}
+.play-done-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+.play-done-actions button {
+  appearance: none;
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--radius-1);
+  background: var(--surface-base);
+  color: var(--ink-primary);
+  font-family: var(--font-text);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color var(--dur-toggle) var(--ease-out);
+}
+.play-done-actions button:hover { background: var(--surface-sunken); }
+.play-done-primary {
+  background: var(--ink-primary);
+  color: var(--surface-base);
+  border-color: var(--ink-primary);
+}
+.play-done-primary:hover { background: color-mix(in oklch, var(--ink-primary) 88%, white); }
+.play-done-stay {
+  appearance: none;
+  margin-top: 8px;
+  padding: 4px;
+  border: 0;
+  background: transparent;
+  color: var(--ink-secondary);
+  text-decoration: underline;
+  font-size: 13px;
+  cursor: pointer;
+}
+.play-done-stay:hover { color: var(--ink-primary); }
+
 /* Smooth chord-to-chord crossfade on the keyboards.
    Each highlight gets var(--dur-chord); see piano.css. */
 @media (max-width: 1100px) {

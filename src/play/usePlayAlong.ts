@@ -43,6 +43,10 @@ export interface PlayAlong {
   activeIndex: number;
   /** Tempo in BPM; 0 when unknown. */
   bpm: number;
+  /** True once playback has run to the last chord (the "you played it through" moment). */
+  ended: boolean;
+  /** Dismiss the completion state without moving the playhead. */
+  dismissEnd: () => void;
   /** Whether play/pause does anything (always in timed mode; needs a tempo in manual). */
   canPlay: boolean;
   /** Playback speed multiplier (1 = normal, 0.75, 0.5 for practice). */
@@ -91,6 +95,7 @@ export function usePlayAlong(
   const [countInEnabled, setCountInEnabled] = useState(false);
   const [countingIn, setCountingIn] = useState(false);
   const [countdown, setCountdown] = useState(0);
+  const [ended, setEnded] = useState(false);
 
   // A fresh song resets the playhead and any range that pointed into the old one.
   useEffect(() => {
@@ -101,6 +106,7 @@ export function usePlayAlong(
     setLoop(null);
     setCountingIn(false);
     setCountdown(0);
+    setEnded(false);
     const a = audioRef?.current;
     if (a) {
       a.pause();
@@ -137,6 +143,7 @@ export function usePlayAlong(
   const seek = useCallback(
     (seconds: number) => {
       setCurrentTime(seconds);
+      setEnded(false);
       // Move the loop tracker too, so seeking out of the A-B range releases the
       // loop instead of the next frame reading it as a cross-the-end wrap.
       audioPrevRef.current = seconds;
@@ -198,6 +205,7 @@ export function usePlayAlong(
         }
         if (nt >= timeline!.duration) {
           setIsPlaying(false);
+          setEnded(true);
           return timeline!.duration;
         }
         return nt;
@@ -220,7 +228,13 @@ export function usePlayAlong(
         // Soft loop: only cycle while the playhead is inside the range; stepping
         // out (via goTo) lets playback continue past it until it re-enters.
         if (lp && i >= lp.start && i <= lp.end) return nextIdx > lp.end ? lp.start : nextIdx;
-        return nextIdx % count;
+        // No loop: stop on the last chord and mark the song complete.
+        if (nextIdx >= count) {
+          setIsPlaying(false);
+          setEnded(true);
+          return count - 1;
+        }
+        return nextIdx;
       });
     }, barMs);
     return () => clearInterval(id);
@@ -269,12 +283,16 @@ export function usePlayAlong(
     if (!audioBacked) return;
     const a = audioRef?.current;
     if (!a) return;
-    const onEnded = () => setIsPlaying(false);
+    const onEnded = () => {
+      setIsPlaying(false);
+      setEnded(true);
+    };
     a.addEventListener("ended", onEnded);
     return () => a.removeEventListener("ended", onEnded);
   }, [audioBacked, audioRef, timeline]);
 
   const next = useCallback(() => {
+    setEnded(false);
     if (timed) {
       const i = chordIndexAt(timeline!.chords, timeRef.current);
       const target = timeline!.chords[Math.min(i + 1, timeline!.chords.length - 1)];
@@ -285,6 +303,7 @@ export function usePlayAlong(
   }, [timed, timeline, count, seek]);
 
   const prev = useCallback(() => {
+    setEnded(false);
     if (timed) {
       const i = chordIndexAt(timeline!.chords, timeRef.current);
       const target = timeline!.chords[Math.max(i - 1, 0)];
@@ -297,6 +316,7 @@ export function usePlayAlong(
   const goTo = useCallback(
     (index: number) => {
       if (count === 0) return;
+      setEnded(false);
       if (timed) {
         const clamped = Math.min(Math.max(index, 0), timeline!.chords.length - 1);
         const target = timeline!.chords[clamped];
@@ -309,6 +329,7 @@ export function usePlayAlong(
   );
 
   const restart = useCallback(() => {
+    setEnded(false);
     if (timed) seek(0);
     else setManualIdx(0);
   }, [timed, seek]);
@@ -322,6 +343,7 @@ export function usePlayAlong(
     setLoop((prev) => ({ start: prev && prev.start <= e ? prev.start : e, end: e }));
   }, []);
   const clearLoop = useCallback(() => setLoop(null), []);
+  const dismissEnd = useCallback(() => setEnded(false), []);
 
   const canPlay = timed || bpm > 0;
   const togglePlay = useCallback(() => {
@@ -331,13 +353,19 @@ export function usePlayAlong(
       setCountingIn(false);
       return;
     }
+    // Pressing Play after the song finished replays it from the top.
+    if (ended) {
+      if (timed) seek(0);
+      else setManualIdx(0);
+      setEnded(false);
+    }
     if (countInEnabled) {
       setCountdown(COUNT_IN_BEATS);
       setCountingIn(true);
     } else {
       setIsPlaying(true);
     }
-  }, [canPlay, isPlaying, countingIn, countInEnabled]);
+  }, [canPlay, isPlaying, countingIn, countInEnabled, ended, timed, seek]);
 
   const tapsRef = useRef<number[]>([]);
   const tap = useCallback(() => {
@@ -359,6 +387,8 @@ export function usePlayAlong(
     currentTime,
     activeIndex,
     bpm,
+    ended,
+    dismissEnd,
     canPlay,
     speed,
     setSpeed,
