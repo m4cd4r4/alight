@@ -35,4 +35,11 @@ export interface Song {
    * pieces whose harmony would be misrepresented by the simpler voicings.
    */
   lockVoicing?: Voicing;
+  /**
+   * Public-domain lyric lines for manual (untimed) songs, each tagged with the
+   * chord index it begins on (`at`). The Play view shows the active line under
+   * the chord name and the covering line in the strip - the same display the
+   * analysed (timed) songs get from their timeline, but driven by the step.
+   */
+  lyricLines?: { text: string; at: number }[];
 }

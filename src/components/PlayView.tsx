@@ -43,6 +43,16 @@ const SPEED_OPTIONS = [
 // The next voicing up, for the completion card's "try a harder voicing".
 const HARDER_VOICING: Record<Voicing, Voicing> = { beginner: "simple", simple: "full", full: "full" };
 
+// Index of the lyric line covering a chord position (last line whose `at` <= i).
+function lineIndexAt(lines: { at: number }[], chordIndex: number): number {
+  let k = -1;
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].at <= chordIndex) k = i;
+    else break;
+  }
+  return k;
+}
+
 const MAX_TRANSPOSE = 11;
 const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
 
@@ -201,17 +211,27 @@ export function PlayView({
     hintTimer.current = window.setTimeout(() => setNeedTempoHint(false), 2100); // matches the pulse (700ms x 3)
   }, []);
 
-  const hasLyrics = !!timeline && timeline.lyrics.length > 0;
+  // Manual (untimed) songs can carry chord-indexed lyric lines; timed songs use
+  // their analysis timeline. Either way the same panel + strip display them.
+  const manualLyrics = !pa.timed && song.lyricLines && song.lyricLines.length ? song.lyricLines : null;
+  const hasLyrics = (!!timeline && timeline.lyrics.length > 0) || !!manualLyrics;
   const lyricFor = useCallback(
     (i: number) => {
-      if (!timeline || !timeline.lyrics.length) return undefined;
-      const chord = timeline.chords[i];
-      if (!chord) return undefined;
-      const li = lyricIndexAt(timeline.lyrics, chord.start);
-      return li >= 0 ? timeline.lyrics[li].text : undefined;
+      if (timeline && timeline.lyrics.length) {
+        const chord = timeline.chords[i];
+        if (!chord) return undefined;
+        const li = lyricIndexAt(timeline.lyrics, chord.start);
+        return li >= 0 ? timeline.lyrics[li].text : undefined;
+      }
+      if (manualLyrics) {
+        const k = lineIndexAt(manualLyrics, i);
+        return k >= 0 ? manualLyrics[k].text : undefined;
+      }
+      return undefined;
     },
-    [timeline],
+    [timeline, manualLyrics],
   );
+  const manualLineIdx = manualLyrics ? Math.max(0, lineIndexAt(manualLyrics, idx)) : 0;
 
   useEffect(() => {
     const a = audioRef.current;
@@ -331,6 +351,8 @@ export function PlayView({
                 <ChordLabel now={cur} index={idx} count={count} showInversion={voicing !== "beginner"} />
                 {timeline && timeline.lyrics.length > 0 ? (
                   <LyricsPanel lines={timeline.lyrics} activeIndex={lyricIdx} />
+                ) : manualLyrics ? (
+                  <LyricsPanel lines={manualLyrics.map((l) => ({ time: l.at, text: l.text }))} activeIndex={manualLineIdx} />
                 ) : null}
               </div>
               <ChordStaff left={cur.left} right={cur.right} chordName={cur.name} />
