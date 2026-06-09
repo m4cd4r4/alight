@@ -17,6 +17,7 @@ import { lyricIndexAt, timelineSymbols, type Timeline } from "../music/timeline.
 import { easiestShift, keyLabel, transposeSymbols } from "../music/transpose.ts";
 import type { Song, Voicing } from "../music/types.ts";
 import { voiceSong } from "../music/voicing.ts";
+import { useChordPiano } from "../play/useChordPiano.ts";
 import { usePlayAlong } from "../play/usePlayAlong.ts";
 import { ChordLabel } from "./ChordLabel.tsx";
 import { ChordStaff } from "./ChordStaff.tsx";
@@ -79,6 +80,13 @@ export function PlayView({
   const [transpose, setTranspose] = useState(0);
   const [volume, setVolume] = useState(1);
   const [needTempoHint, setNeedTempoHint] = useState(false);
+  // Hear the chord you're playing (sampled piano). Off by default - audio needs
+  // a user gesture to start, and a beginner should opt in rather than be
+  // surprised by sound. Remembered across sessions.
+  const [sound, setSound] = useState(
+    () => typeof localStorage !== "undefined" && localStorage.getItem("alight:sound") === "on",
+  );
+  const piano = useChordPiano();
 
   // The original recording (when one was analysed) - its playback drives the
   // play-along clock; absent for PD-library / paste / UG songs (silent clock).
@@ -111,6 +119,39 @@ export function PlayView({
   const goPrev = useCallback(() => pa.prev(), [pa]);
   const goNext = useCallback(() => pa.next(), [pa]);
   const goTo = useCallback((i: number) => pa.goTo(i), [pa]);
+
+  // Sampled-piano playback. Enabling Sound (or tapping a key) primes the audio
+  // from a real gesture; once loaded, each chord change is struck so you hear
+  // what the keys light. Tapping a key plays just that note.
+  const onSound = useCallback(
+    (on: boolean) => {
+      setSound(on);
+      if (on) piano.prime();
+    },
+    [piano],
+  );
+  const pressNote = useCallback(
+    (note: string) => {
+      piano.prime();
+      piano.playNote(note);
+    },
+    [piano],
+  );
+  const nowNotes = useMemo(
+    () => (cur && !cur.unparseable ? [...cur.left, ...cur.right].map((n) => n.note) : []),
+    [cur],
+  );
+  useEffect(() => {
+    try {
+      localStorage.setItem("alight:sound", sound ? "on" : "off");
+    } catch {
+      /* storage unavailable */
+    }
+  }, [sound]);
+  useEffect(() => {
+    if (!sound || !piano.ready || nowNotes.length === 0) return;
+    piano.playChord(nowNotes);
+  }, [nowNotes, sound, piano.ready, piano.playChord]);
 
   const setTransposeBy = useCallback(
     (delta: number) => setTranspose((t) => Math.max(-MAX_TRANSPOSE, Math.min(MAX_TRANSPOSE, t + delta))),
@@ -279,14 +320,14 @@ export function PlayView({
                   <span className="marker"><svg viewBox="0 0 12 12"><rect x="2" y="2" width="8" height="8" fill="currentColor" /></svg></span>
                   <span>Left hand</span>
                 </div>
-                <Keyboard hand="left" startNote="C2" endNote="E3" nowNotes={cur.left} nextNotes={nextStep.left} size={compact ? "sm" : "md"} showFingering={fingering} />
+                <Keyboard hand="left" startNote="C2" endNote="E3" nowNotes={cur.left} nextNotes={nextStep.left} size={compact ? "sm" : "md"} showFingering={fingering} onPressNote={sound ? pressNote : undefined} />
               </div>
               <div className="hand-block">
                 <div className="hand-header right">
                   <span className="marker"><svg viewBox="0 0 12 12"><path d="M6 10 L2 3 L10 3 Z" fill="currentColor" /></svg></span>
                   <span>Right hand</span>
                 </div>
-                <Keyboard hand="right" startNote="F3" endNote="B4" nowNotes={cur.right} nextNotes={nextStep.right} size={compact ? "sm" : "md"} showFingering={fingering} />
+                <Keyboard hand="right" startNote="F3" endNote="B4" nowNotes={cur.right} nextNotes={nextStep.right} size={compact ? "sm" : "md"} showFingering={fingering} onPressNote={sound ? pressNote : undefined} />
               </div>
             </div>
 
@@ -308,7 +349,10 @@ export function PlayView({
             onNext={goNext}
             isPlaying={pa.isPlaying}
             canPlay={pa.canPlay}
-            onTogglePlay={pa.togglePlay}
+            onTogglePlay={() => {
+              if (sound) piano.prime();
+              pa.togglePlay();
+            }}
             onBlocked={onBlockedPlay}
           />
           <div className="tempo-controls">
@@ -367,6 +411,7 @@ export function PlayView({
           </div>
 
           <div className="ctl-block toggles">
+            <ToggleSwitch checked={sound} onChange={onSound}>Sound</ToggleSwitch>
             <ToggleSwitch checked={allChords} onChange={setAllChords}>All chords</ToggleSwitch>
             {hasLyrics ? (
               <ToggleSwitch checked={stripLyrics} onChange={setStripLyrics}>Lyrics</ToggleSwitch>

@@ -121,6 +121,12 @@
 }
 .pck-marker svg { width: 100%; height: 100%; display: block; }
 
+/* Tappable keys (Sound on): show they respond to a press. */
+.pck-key.is-playable { cursor: pointer; }
+.pck-white.is-playable:hover { background: var(--surface-sunken); }
+.pck-black.is-playable:active,
+.pck-white.is-playable:active { filter: brightness(0.97); }
+
 /* ---- Lit states --------------------------------------------- */
 
 /* Left hand, now */
