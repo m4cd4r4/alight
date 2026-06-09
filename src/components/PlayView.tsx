@@ -328,6 +328,7 @@ export function PlayView({
           <>
             <div className="chord-row">
               <ChordLabel now={cur} index={idx} count={count} showInversion={voicing !== "beginner"} />
+              <ChordStaff left={cur.left} right={cur.right} chordName={cur.name} />
               <div className="chord-label-side">
                 <div className="capo">{song.capoNote}</div>
                 <div className="pck-chord-next" aria-label={`Next chord: ${nextStep.name}`}>
@@ -348,8 +349,6 @@ export function PlayView({
             {timeline && timeline.lyrics.length > 0 ? (
               <LyricsPanel lines={timeline.lyrics} activeIndex={lyricIdx} />
             ) : null}
-
-            <ChordStaff left={cur.left} right={cur.right} chordName={cur.name} />
 
             <div className="keyboards">
               <div className="hand-block">

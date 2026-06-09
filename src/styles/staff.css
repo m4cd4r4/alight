@@ -5,11 +5,15 @@
 .chord-staff {
   display: flex;
   justify-content: center;
-  width: 100%;
+  /* Sits in the empty middle of the chord row (name | staff | next) so it no
+     longer takes a band of its own - pulls the keyboards + transport up. */
+  flex: 0 1 auto;
+  align-self: center;
+  width: clamp(168px, 22vw, 220px);
 }
 .chord-staff svg {
   width: 100%;
-  max-width: 240px;
+  max-width: 220px;
   height: auto;
 }
 
@@ -62,6 +66,11 @@
 }
 
 @media (max-width: 640px) {
+  /* Stacked column: the staff goes full-width and centres under the chord name. */
+  .chord-staff {
+    width: 100%;
+    align-self: center;
+  }
   .chord-staff svg {
     max-width: 200px;
   }
