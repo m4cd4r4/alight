@@ -1,0 +1,68 @@
+/* ============================================================
+   Grand-staff chord notation (ChordStaff.tsx).
+   Sits above the keyboards; mirrors the chord the keys light.
+   ============================================================ */
+.chord-staff {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+.chord-staff svg {
+  width: 100%;
+  max-width: 240px;
+  height: auto;
+}
+
+.sn-line,
+.sn-bar,
+.sn-ledger {
+  stroke: var(--hairline-strong);
+  stroke-width: 1;
+}
+.sn-brace {
+  stroke: var(--ink-tertiary);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+.sn-ledger {
+  stroke: var(--ink-tertiary);
+}
+
+/* Hand markers stand in for clefs (square = left, triangle = right), matching
+   the keyboards' hand headers and rendering on every device. */
+.sn-mark-left {
+  fill: var(--hand-left);
+}
+.sn-mark-right {
+  fill: var(--hand-right);
+}
+
+/* Noteheads inherit the hand colours used on the keyboards. */
+.sn-head {
+  stroke-width: 2.2;
+  fill: none;
+  /* The crossfade matches the keyboard's chord change. */
+  transition: stroke var(--dur-chord) var(--ease-out);
+}
+.sn-left .sn-head {
+  stroke: var(--hand-left);
+}
+.sn-right .sn-head {
+  stroke: var(--hand-right);
+}
+.sn-acc {
+  font-size: 15px;
+  font-weight: 700;
+}
+.sn-left .sn-acc {
+  fill: var(--hand-left);
+}
+.sn-right .sn-acc {
+  fill: var(--hand-right);
+}
+
+@media (max-width: 640px) {
+  .chord-staff svg {
+    max-width: 200px;
+  }
+}
