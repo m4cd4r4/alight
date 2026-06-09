@@ -23,6 +23,8 @@ interface KeyboardProps {
   nextNotes: VoicedNote[];
   size?: KeyboardSize;
   showFingering?: boolean;
+  /** When set, every key is tappable and calls back with its note (e.g. "C#4"). */
+  onPressNote?: (note: string) => void;
 }
 
 /** White keys spanning startNote..endNote inclusive. */
@@ -54,6 +56,7 @@ export function Keyboard({
   nextNotes,
   size = "md",
   showFingering = true,
+  onPressNote,
 }: KeyboardProps) {
   const whites = whiteKeysInRange(startNote, endNote);
 
@@ -94,8 +97,13 @@ export function Keyboard({
           const { state, data } = keyState(name);
           const cls = ["pck-key", "pck-white"];
           if (state) cls.push(`is-${hand}`, `is-${state}`);
+          if (onPressNote) cls.push("is-playable");
           return (
-            <div key={name} className={cls.join(" ")}>
+            <div
+              key={name}
+              className={cls.join(" ")}
+              onPointerDown={onPressNote ? () => onPressNote(name) : undefined}
+            >
               {state && data && label(name, data.finger, state)}
             </div>
           );
@@ -105,9 +113,15 @@ export function Keyboard({
         const { state, data } = keyState(name);
         const cls = ["pck-key", "pck-black"];
         if (state) cls.push(`is-${hand}`, `is-${state}`);
+        if (onPressNote) cls.push("is-playable");
         const style = { "--offset": `${offsetIndex * whiteW}px` } as StyleWithVars;
         return (
-          <div key={name} className={cls.join(" ")} style={style}>
+          <div
+            key={name}
+            className={cls.join(" ")}
+            style={style}
+            onPointerDown={onPressNote ? () => onPressNote(name) : undefined}
+          >
             {state && data && label(name, data.finger, state)}
           </div>
         );
