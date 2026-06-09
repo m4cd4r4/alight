@@ -23,6 +23,9 @@ const MIN_BPM = 30;
 const MAX_BPM = 300;
 const COUNT_IN_BEATS = 4;
 const COUNT_IN_FALLBACK_BPM = 100; // when no tempo is known yet
+// Manual songs carry no detected tempo. Seed a gentle default so Play
+// auto-advances out of the box (one chord per bar); Tap tempo still refines it.
+const DEFAULT_MANUAL_BPM = 90;
 
 export interface LoopRange {
   /** Inclusive chord indices; start <= end. */
@@ -80,7 +83,9 @@ export function usePlayAlong(
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [manualIdx, setManualIdx] = useState(0);
-  const [bpm, setBpm] = useState(() => Math.round(timeline?.beats?.bpm ?? 0));
+  const [bpm, setBpm] = useState(() =>
+    Math.round(timeline?.beats?.bpm ?? (timed ? 0 : DEFAULT_MANUAL_BPM)),
+  );
   const [speed, setSpeed] = useState(1);
   const [loop, setLoop] = useState<LoopRange | null>(null);
   const [countInEnabled, setCountInEnabled] = useState(false);
@@ -92,7 +97,7 @@ export function usePlayAlong(
     setIsPlaying(false);
     setCurrentTime(0);
     setManualIdx(0);
-    setBpm(Math.round(timeline?.beats?.bpm ?? 0));
+    setBpm(Math.round(timeline?.beats?.bpm ?? (timed ? 0 : DEFAULT_MANUAL_BPM)));
     setLoop(null);
     setCountingIn(false);
     setCountdown(0);

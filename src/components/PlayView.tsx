@@ -184,7 +184,7 @@ export function PlayView({
   const hint = pa.timed
     ? "Play follows the song. Space or arrows step."
     : pa.canPlay
-      ? "Play auto-advances at your tempo. Space steps."
+      ? "Play auto-advances. Tap a tempo to set the pace; Space steps."
       : "Space steps. Tap a tempo to enable play.";
 
   return (
