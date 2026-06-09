@@ -9,6 +9,7 @@
 
 import type { Song, Voicing } from "../music/types.ts";
 import type { Timeline } from "../music/timeline.ts";
+import { PD_LYRICS } from "./pd-lyrics.ts";
 
 export interface LibraryEntry {
   /** Stable slug, used as the React key. */
@@ -24,7 +25,7 @@ export interface LibraryEntry {
 
 const PD = "Public Domain";
 
-type PdOpts = { lockVoicing?: Voicing; lyricLines?: { text: string; at: number }[] };
+type PdOpts = { lockVoicing?: Voicing };
 function pd(id: string, title: string, artist: string, key: string, chords: string[], opts: PdOpts = {}): LibraryEntry {
   return {
     id,
@@ -34,7 +35,6 @@ function pd(id: string, title: string, artist: string, key: string, chords: stri
       capoNote: "",
       chords,
       ...(opts.lockVoicing ? { lockVoicing: opts.lockVoicing } : {}),
-      ...(opts.lyricLines ? { lyricLines: opts.lyricLines } : {}),
     },
     timeline: null,
     key,
@@ -44,34 +44,15 @@ function pd(id: string, title: string, artist: string, key: string, chords: stri
 
 export const PD_LIBRARY: LibraryEntry[] = [
   pd("twinkle-twinkle", "Twinkle Twinkle Little Star", "Traditional", "C",
-    ["C", "C", "F", "C", "F", "C", "G", "C", "C", "F", "C", "G", "C"], {
-    lyricLines: [
-      { text: "Twinkle, twinkle, little star,", at: 0 },
-      { text: "how I wonder what you are.", at: 4 },
-      { text: "Up above the world so high,", at: 8 },
-      { text: "like a diamond in the sky.", at: 11 },
-    ],
-  }),
+    ["C", "C", "F", "C", "F", "C", "G", "C", "C", "F", "C", "G", "C"]),
   pd("mary-had-a-little-lamb", "Mary Had a Little Lamb", "Traditional", "C",
-    ["C", "G", "C", "C", "G", "C"], {
-    lyricLines: [
-      { text: "Mary had a little lamb,", at: 0 },
-      { text: "its fleece was white as snow.", at: 3 },
-    ],
-  }),
+    ["C", "G", "C", "C", "G", "C"]),
   pd("ode-to-joy", "Ode to Joy", "Beethoven", "C",
     ["C", "C", "G", "C", "C", "G", "C", "C"]),
   pd("when-the-saints", "When the Saints Go Marching In", "Traditional", "C",
     ["C", "C", "C7", "F", "C", "G", "C", "C"]),
   pd("auld-lang-syne", "Auld Lang Syne", "Traditional", "G",
-    ["G", "C", "G", "D", "G", "C", "D", "G"], {
-    lyricLines: [
-      { text: "Should auld acquaintance be forgot,", at: 0 },
-      { text: "and never brought to mind?", at: 2 },
-      { text: "Should auld acquaintance be forgot,", at: 4 },
-      { text: "and days of auld lang syne?", at: 6 },
-    ],
-  }),
+    ["G", "C", "G", "D", "G", "C", "D", "G"]),
   pd("swing-low", "Swing Low, Sweet Chariot", "Traditional Spiritual", "G",
     ["G", "C", "G", "D", "G", "C", "G", "D", "G"]),
   pd("simple-gifts", "Simple Gifts", "Traditional (Shaker)", "G",
@@ -87,25 +68,9 @@ export const PD_LIBRARY: LibraryEntry[] = [
 
   // Christmas carols (all public domain).
   pd("silent-night", "Silent Night", "Franz Gruber", "C",
-    ["C", "C", "G", "C", "C", "G", "C", "F", "C", "F", "C", "C", "G", "C"], {
-    lyricLines: [
-      { text: "Silent night, holy night,", at: 0 },
-      { text: "all is calm, all is bright,", at: 3 },
-      { text: "round yon virgin mother and child,", at: 6 },
-      { text: "holy infant so tender and mild,", at: 8 },
-      { text: "sleep in heavenly peace,", at: 10 },
-      { text: "sleep in heavenly peace.", at: 12 },
-    ],
-  }),
+    ["C", "C", "G", "C", "C", "G", "C", "F", "C", "F", "C", "C", "G", "C"]),
   pd("jingle-bells", "Jingle Bells", "James Pierpont", "C",
-    ["C", "C", "F", "C", "C", "G", "C", "C"], {
-    lyricLines: [
-      { text: "Jingle bells, jingle bells,", at: 0 },
-      { text: "jingle all the way!", at: 2 },
-      { text: "Oh what fun it is to ride", at: 4 },
-      { text: "in a one-horse open sleigh!", at: 6 },
-    ],
-  }),
+    ["C", "C", "F", "C", "C", "G", "C", "C"]),
   pd("joy-to-the-world", "Joy to the World", "Traditional", "C",
     ["C", "G", "C", "F", "C", "G", "C"]),
   pd("deck-the-halls", "Deck the Halls", "Traditional", "G",
@@ -234,4 +199,40 @@ export const PD_LIBRARY: LibraryEntry[] = [
     ["Em", "Em", "G", "D", "Em", "Am", "Em", "B7", "Em"]),
   pd("battle-hymn", "Battle Hymn of the Republic", "Traditional", "G",
     ["G", "G", "C", "G", "G", "D", "G", "C", "G", "D", "G"]),
+
+  // Added 2026-06-09 - more public-domain songs across folk, shanties, rounds,
+  // spirituals, and world traditions. Lyrics (PD-verified) live in pd-lyrics.ts.
+  pd("barbara-allen", "Barbara Allen", "Traditional English/Scottish Folk", "D",
+    ["D", "G", "D", "A7", "D", "G", "A7", "D"]),
+  pd("wayfaring-stranger", "Wayfaring Stranger", "Traditional American Spiritual", "Am",
+    ["Am", "Am", "Dm", "Am", "Am", "E7", "Am", "Am"]),
+  pd("on-top-of-old-smoky", "On Top of Old Smoky", "Traditional American Folk", "G",
+    ["G", "G", "C", "G", "G", "D7", "G", "G"]),
+  pd("frankie-and-johnny", "Frankie and Johnny", "Traditional American Folk Ballad", "C",
+    ["C", "C", "F", "F", "C", "G7", "C", "G7"]),
+  pd("blow-the-man-down", "Blow the Man Down", "Traditional Sea Shanty", "G",
+    ["G", "G", "D7", "G", "G", "C", "D7", "G"]),
+  pd("frere-jacques", "Frère Jacques", "Traditional French Round", "F",
+    ["F", "C7", "F", "C7", "F", "C7", "F", "C7"]),
+  pd("sakura-sakura", "Sakura Sakura", "Traditional Japanese", "Am",
+    ["Am", "Dm", "Am", "E", "Am", "Dm", "E", "Am"]),
+  pd("dona-nobis-pacem", "Dona Nobis Pacem", "Traditional Round (attrib. Palestrina era)", "F",
+    ["F", "C7", "F", "Bb", "F", "C7", "F", "C7", "F", "C7", "F", "Bb"]),
+  pd("down-in-the-valley", "Down in the Valley", "Traditional American Folk", "G",
+    ["G", "G", "D7", "D7", "D7", "D7", "G", "G"]),
+  pd("angels-we-have-heard-on-high", "Angels We Have Heard on High", "Traditional French Carol", "G",
+    ["G", "D7", "G", "G", "G", "D7", "G", "D7", "G", "G"]),
+  pd("nobody-knows-the-trouble-ive-seen", "Nobody Knows the Trouble I've Seen", "Traditional Spiritual", "F",
+    ["F", "F", "Bb", "F", "F", "C7", "F", "F"]),
+  pd("go-down-moses", "Go Down, Moses", "Traditional Spiritual", "Am",
+    ["Am", "Am", "E7", "Am", "Am", "Dm", "E7", "Am"]),
+  pd("polly-wolly-doodle", "Polly Wolly Doodle", "Traditional American", "D",
+    ["D", "D", "A7", "A7", "A7", "A7", "D", "D"]),
 ];
+
+// Attach the public-domain lyric lines (kept in a separate map so the entries
+// above stay readable). Songs with no PD lyrics simply get none.
+for (const entry of PD_LIBRARY) {
+  const lines = PD_LYRICS[entry.id];
+  if (lines) entry.song.lyricLines = lines;
+}
