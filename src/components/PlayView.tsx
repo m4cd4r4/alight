@@ -40,6 +40,9 @@ const SPEED_OPTIONS = [
   { value: "1", label: "1×" },
 ];
 
+// The next voicing up, for the completion card's "try a harder voicing".
+const HARDER_VOICING: Record<Voicing, Voicing> = { beginner: "simple", simple: "full", full: "full" };
+
 const MAX_TRANSPOSE = 11;
 const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
 
@@ -87,6 +90,18 @@ export function PlayView({
     () => typeof localStorage !== "undefined" && localStorage.getItem("alight:sound") === "on",
   );
   const piano = useChordPiano();
+  // First-run coach cue near the keyboards, dismissed for good on first interaction.
+  const [showCoach, setShowCoach] = useState(
+    () => !(typeof localStorage !== "undefined" && localStorage.getItem("alight:seen-coach") === "1"),
+  );
+  const dismissCoach = useCallback(() => {
+    setShowCoach(false);
+    try {
+      localStorage.setItem("alight:seen-coach", "1");
+    } catch {
+      /* storage unavailable */
+    }
+  }, []);
 
   // The original recording (when one was analysed) - its playback drives the
   // play-along clock; absent for PD-library / paste / UG songs (silent clock).
@@ -116,9 +131,9 @@ export function PlayView({
   const cur = steps[idx];
   const nextStep = count ? steps[(idx + 1) % count] : undefined;
 
-  const goPrev = useCallback(() => pa.prev(), [pa]);
-  const goNext = useCallback(() => pa.next(), [pa]);
-  const goTo = useCallback((i: number) => pa.goTo(i), [pa]);
+  const goPrev = useCallback(() => { dismissCoach(); pa.prev(); }, [pa, dismissCoach]);
+  const goNext = useCallback(() => { dismissCoach(); pa.next(); }, [pa, dismissCoach]);
+  const goTo = useCallback((i: number) => { dismissCoach(); pa.goTo(i); }, [pa, dismissCoach]);
 
   // Sampled-piano playback. Enabling Sound (or tapping a key) primes the audio
   // from a real gesture; once loaded, each chord change is struck so you hear
@@ -132,10 +147,11 @@ export function PlayView({
   );
   const pressNote = useCallback(
     (note: string) => {
+      dismissCoach();
       piano.prime();
       piano.playNote(note);
     },
-    [piano],
+    [piano, dismissCoach],
   );
   const nowNotes = useMemo(
     () => (cur && !cur.unparseable ? [...cur.left, ...cur.right].map((n) => n.note) : []),
@@ -152,6 +168,24 @@ export function PlayView({
     if (!sound || !piano.ready || nowNotes.length === 0) return;
     piano.playChord(nowNotes);
   }, [nowNotes, sound, piano.ready, piano.playChord]);
+
+  // Completion moment: when the song runs out, offer a calm next step. Pressing
+  // any of these replays from the top (pa.togglePlay restarts when ended).
+  const canHarder = !song.lockVoicing && voicing !== "full";
+  const replay = useCallback(() => {
+    if (sound) piano.prime();
+    pa.togglePlay();
+  }, [sound, piano, pa]);
+  const replaySlower = useCallback(() => {
+    pa.setSpeed(pa.speed > 0.75 ? 0.75 : 0.5); // step down toward the 0.5 floor
+    if (sound) piano.prime();
+    pa.togglePlay();
+  }, [sound, piano, pa]);
+  const tryHarder = useCallback(() => {
+    setVoicing((v) => HARDER_VOICING[v]);
+    if (sound) piano.prime();
+    pa.togglePlay();
+  }, [sound, piano, pa]);
 
   const setTransposeBy = useCallback(
     (delta: number) => setTranspose((t) => Math.max(-MAX_TRANSPOSE, Math.min(MAX_TRANSPOSE, t + delta))),
@@ -186,6 +220,9 @@ export function PlayView({
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
+      // While the completion card is up, keys belong to it (the focused button),
+      // not the stepper - otherwise Space would silently advance behind the card.
+      if (pa.ended) return;
       const target = e.target as HTMLElement;
       // Let focused controls handle their own keys - otherwise Space on a focused
       // button both activates it and steps the song (double-fire).
@@ -201,7 +238,7 @@ export function PlayView({
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [goNext, goPrev]);
+  }, [goNext, goPrev, pa.ended]);
 
   // Timed cues: which lyric line is live, and when the next chord lands.
   const lyricIdx = timeline ? lyricIndexAt(timeline.lyrics, pa.currentTime) : -1;
@@ -343,6 +380,15 @@ export function PlayView({
           </>
         )}
 
+        {showCoach && !allChords ? (
+          <div className="play-coach">
+            <span>
+              Press <kbd>Space</kbd> or the <kbd>←</kbd> <kbd>→</kbd> arrows for the next chord. Tap any chord below to jump.
+            </span>
+            <button type="button" className="play-coach-dismiss" onClick={dismissCoach}>Got it</button>
+          </div>
+        ) : null}
+
         <div className="transport-row">
           <Transport
             onPrev={goPrev}
@@ -350,6 +396,7 @@ export function PlayView({
             isPlaying={pa.isPlaying}
             canPlay={pa.canPlay}
             onTogglePlay={() => {
+              dismissCoach();
               if (sound) piano.prime();
               pa.togglePlay();
             }}
@@ -366,6 +413,25 @@ export function PlayView({
             {needTempoHint ? "Tap a tempo to enable Play - or use Space / the arrows to step through." : hint}
           </div>
         </div>
+
+        {pa.ended ? (
+          <div className="play-done" role="dialog" aria-modal="true" aria-labelledby="play-done-title">
+            <div className="play-done-card">
+              <p className="play-done-title" id="play-done-title">You played it through</p>
+              <p className="play-done-sub">{song.title}, start to finish. Nice.</p>
+              <div className="play-done-actions">
+                <button type="button" className="play-done-primary" onClick={replay} autoFocus>Play again</button>
+                {pa.speed > 0.5 ? (
+                  <button type="button" onClick={replaySlower}>Slower</button>
+                ) : null}
+                {canHarder ? (
+                  <button type="button" onClick={tryHarder}>Try the {HARDER_VOICING[voicing]} voicing</button>
+                ) : null}
+              </div>
+              <button type="button" className="play-done-stay" onClick={pa.dismissEnd}>Stay here</button>
+            </div>
+          </div>
+        ) : null}
       </main>
 
       <footer className="play-footer">
