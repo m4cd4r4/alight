@@ -11,6 +11,10 @@ coverage/
 .DS_Store
 Thumbs.db
 
+# Vendored piano samples - fetched at build (scripts/fetch-piano-samples.mjs),
+# kept out of git history. Drop this line + `git add public/samples` to commit them.
+public/samples/
+
 # Local browser-verification screenshots + scripts (regenerated on demand, not committed)
 docs/verification/
 verify-shots/

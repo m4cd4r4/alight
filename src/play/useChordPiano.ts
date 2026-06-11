@@ -32,7 +32,16 @@ export function useChordPiano(): ChordPiano {
     ctxRef.current = ctx;
     import("smplr")
       .then(async ({ SplendidGrandPiano }) => {
-        const piano = new SplendidGrandPiano(ctx);
+        // Self-hosted samples (served from /samples; vendored by
+        // scripts/fetch-piano-samples.mjs) - no runtime dependency on smplr's CDN.
+        // Sample names contain '#' (black keys); we serve them with '#' -> 's'
+        // filenames and rewrite the request here, since a literal '#' in a URL
+        // path is a fragment delimiter that some static hosts mishandle.
+        const piano = new SplendidGrandPiano(ctx, {
+          baseUrl: "/samples",
+          formats: ["ogg"],
+          storage: { fetch: (url: string) => fetch(url.replace(/%23/gi, "s").replace(/#/g, "s")) },
+        });
         await piano.load;
         pianoRef.current = piano;
         setReady(true);
