@@ -26,6 +26,9 @@ const COUNT_IN_FALLBACK_BPM = 100; // when no tempo is known yet
 // Manual songs carry no detected tempo. Seed a gentle default so Play
 // auto-advances out of the box (one chord per bar); Tap tempo still refines it.
 const DEFAULT_MANUAL_BPM = 90;
+// Note-sequence (figure) songs pace each step by its own beat length; seed a
+// gentle tempo so the arpeggio rolls without a tap. Per-song `bpm` overrides it.
+const DEFAULT_FIGURE_BPM = 60;
 
 export interface LoopRange {
   /** Inclusive chord indices; start <= end. */
@@ -73,12 +76,23 @@ export interface PlayAlong {
   tap: () => void;
 }
 
+/** A note-sequence song's per-step beat lengths and suggested tempo. */
+export interface FigureClock {
+  stepBeats: number[];
+  bpm?: number;
+}
+
 export function usePlayAlong(
   timeline: Timeline | null,
   count: number,
   audioRef?: RefObject<HTMLAudioElement | null>,
+  figure?: FigureClock | null,
 ): PlayAlong {
   const timed = !!timeline && timeline.chords.length > 0 && timeline.duration > 0;
+  // Figure mode: a manual song whose steps carry their own rhythm (arpeggio /
+  // melody). The clock advances per step by `stepBeats[i]`, not one per bar.
+  const figureBeats = !timed && figure && figure.stepBeats.length ? figure.stepBeats : null;
+  const figureBpm = figure?.bpm;
   // Audio-backed: a real recording drives the clock instead of the wall clock.
   // Same timed UI, but currentTime is read from the <audio> element and play /
   // seek / speed / loop drive it. Falls back to the silent clock when absent.
@@ -87,9 +101,12 @@ export function usePlayAlong(
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [manualIdx, setManualIdx] = useState(0);
-  const [bpm, setBpm] = useState(() =>
-    Math.round(timeline?.beats?.bpm ?? (timed ? 0 : DEFAULT_MANUAL_BPM)),
-  );
+  const seedBpm = () =>
+    Math.round(
+      timeline?.beats?.bpm ??
+        (figureBeats ? figureBpm ?? DEFAULT_FIGURE_BPM : timed ? 0 : DEFAULT_MANUAL_BPM),
+    );
+  const [bpm, setBpm] = useState(seedBpm);
   const [speed, setSpeed] = useState(1);
   const [loop, setLoop] = useState<LoopRange | null>(null);
   const [countInEnabled, setCountInEnabled] = useState(false);
@@ -97,12 +114,13 @@ export function usePlayAlong(
   const [countdown, setCountdown] = useState(0);
   const [ended, setEnded] = useState(false);
 
-  // A fresh song resets the playhead and any range that pointed into the old one.
+  // A fresh song resets the playhead and any range that pointed into the old one,
+  // and reseeds the tempo from its source (figure tempo / detected BPM / default).
   useEffect(() => {
     setIsPlaying(false);
     setCurrentTime(0);
     setManualIdx(0);
-    setBpm(Math.round(timeline?.beats?.bpm ?? (timed ? 0 : DEFAULT_MANUAL_BPM)));
+    setBpm(seedBpm());
     setLoop(null);
     setCountingIn(false);
     setCountdown(0);
@@ -116,7 +134,7 @@ export function usePlayAlong(
         /* not seekable yet */
       }
     }
-  }, [timeline, audioRef]);
+  }, [timeline, audioRef, figureBeats, figureBpm]);
 
   const activeIndex = timed
     ? Math.max(0, chordIndexAt(timeline!.chords, currentTime))
@@ -217,9 +235,10 @@ export function usePlayAlong(
   }, [timed, isPlaying, timeline]);
 
   // Manual auto-advance: one chord per bar at the tapped tempo, scaled by speed,
-  // wrapping inside the loop range when one is set.
+  // wrapping inside the loop range when one is set. Figure songs use the
+  // per-step clock below instead.
   useEffect(() => {
-    if (timed || !isPlaying || bpm <= 0 || count === 0) return;
+    if (timed || figureBeats || !isPlaying || bpm <= 0 || count === 0) return;
     const barMs = ((60_000 / bpm) * BEATS_PER_BAR) / speed;
     const id = setInterval(() => {
       setManualIdx((i) => {
@@ -238,7 +257,30 @@ export function usePlayAlong(
       });
     }, barMs);
     return () => clearInterval(id);
-  }, [timed, isPlaying, bpm, count, speed]);
+  }, [timed, figureBeats, isPlaying, bpm, count, speed]);
+
+  // Figure auto-advance: dwell on each step for its own beat length, then move
+  // on. Re-runs per step (manualIdx in deps), so a tap/seek mid-play simply
+  // reschedules from the new step. Honours the same soft A-B loop.
+  useEffect(() => {
+    if (!figureBeats || !isPlaying || bpm <= 0 || count === 0) return;
+    const beats = figureBeats[manualIdx] ?? 1;
+    const dwellMs = (beats * (60_000 / bpm)) / speed;
+    const id = setTimeout(() => {
+      setManualIdx((i) => {
+        const lp = loopRef.current;
+        const nextIdx = i + 1;
+        if (lp && i >= lp.start && i <= lp.end) return nextIdx > lp.end ? lp.start : nextIdx;
+        if (nextIdx >= count) {
+          setIsPlaying(false);
+          setEnded(true);
+          return count - 1;
+        }
+        return nextIdx;
+      });
+    }, dwellMs);
+    return () => clearTimeout(id);
+  }, [figureBeats, isPlaying, bpm, count, speed, manualIdx]);
 
   // Count-in: tick down the beats, then hand off to the real clock.
   useEffect(() => {

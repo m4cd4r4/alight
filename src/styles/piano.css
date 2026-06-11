@@ -196,6 +196,38 @@
 .pck-key.is-right.is-next .pck-note   { opacity: 0.75; }
 .pck-key.is-right.is-next .pck-finger { opacity: 0.55; }
 
+/* Held: still ringing under a rolling arpeggio (figure songs), not struck this
+   step. A translucent hand-colour fill with a faint steady halo - clearly "on"
+   but reading as sustained, between the soft "next" preview and the bright "now". */
+.pck-key.is-left.is-held {
+  background: color-mix(in oklch, var(--hand-left) 52%, transparent);
+  border-color: color-mix(in oklch, var(--hand-left) 70%, transparent);
+  color: var(--hand-left-ink);
+}
+.pck-key.is-right.is-held {
+  background: color-mix(in oklch, var(--hand-right) 52%, transparent);
+  border-color: color-mix(in oklch, var(--hand-right) 70%, transparent);
+  color: var(--hand-right-ink);
+}
+.pck-key.is-held .pck-marker { opacity: 0.85; }
+.pck-key.is-held .pck-marker .fill { display: none; }
+.pck-key.is-held .pck-marker .outline { display: block; }
+.pck-key.is-held .pck-note   { opacity: 0.85; }
+.pck-key.is-held .pck-finger { opacity: 0.6; }
+.pck-white.is-held { position: relative; z-index: 1; }
+.pck-key.is-held {
+  box-shadow:
+    0 0 0 1px color-mix(in oklch, var(--glow-color) 30%, transparent),
+    0 0 8px 0 color-mix(in oklch, var(--glow-color) 26%, transparent);
+}
+.pck-key.is-left.is-held  { --glow-color: var(--hand-left); }
+.pck-key.is-right.is-held { --glow-color: var(--hand-right); }
+[data-theme="dark"] .pck-key.is-held {
+  box-shadow:
+    0 0 0 1px color-mix(in oklch, var(--glow-color) 42%, transparent),
+    0 0 12px 1px color-mix(in oklch, var(--glow-color) 34%, transparent);
+}
+
 /* Markers default to filled glyph; "is-next" hides .fill and shows .outline */
 .pck-marker .outline { display: none; }
 

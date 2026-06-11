@@ -35,10 +35,10 @@ function staffLines(topY: number): number[] {
   return [0, 1, 2, 3, 4].map((i) => topY + i * LINE_GAP);
 }
 
-function Notehead({ note, clef, hand }: { note: string; clef: Clef; hand: "left" | "right" }) {
+function Notehead({ note, clef, hand, held = false }: { note: string; clef: Clef; hand: "left" | "right"; held?: boolean }) {
   const y = noteY(note, clef);
   return (
-    <g className={`sn-note sn-${hand}`}>
+    <g className={`sn-note sn-${hand}${held ? " sn-held" : ""}`}>
       {ledgerYs(y, clef).map((ly) => (
         <line key={ly} className="sn-ledger" x1={NOTE_X - LEDGER_HALF} x2={NOTE_X + LEDGER_HALF} y1={ly} y2={ly} />
       ))}
@@ -63,10 +63,15 @@ export function ChordStaff({
   left,
   right,
   chordName,
+  heldLeft = [],
+  heldRight = [],
 }: {
   left: VoicedNote[];
   right: VoicedNote[];
   chordName: string;
+  /** Sustained notes (figure songs) drawn dim behind the struck ones. */
+  heldLeft?: VoicedNote[];
+  heldRight?: VoicedNote[];
 }) {
   const noteList = (ns: VoicedNote[]) => ns.map((n) => prettify(pitchClassOf(n.note))).join(", ");
   const label = right.length || left.length
@@ -105,6 +110,12 @@ export function ChordStaff({
           aria-hidden="true"
         />
 
+        {heldRight.map((n) => (
+          <Notehead key={`hr${n.note}`} note={n.note} clef="treble" hand="right" held />
+        ))}
+        {heldLeft.map((n) => (
+          <Notehead key={`hl${n.note}`} note={n.note} clef="bass" hand="left" held />
+        ))}
         {right.map((n) => (
           <Notehead key={`r${n.note}`} note={n.note} clef="treble" hand="right" />
         ))}

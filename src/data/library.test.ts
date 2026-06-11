@@ -4,6 +4,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { PD_LIBRARY } from "./pd-library.ts";
 import { voiceSong } from "../music/voicing.ts";
+import { voiceFigure } from "../music/figure.ts";
+import { Note } from "tonal";
 
 test("every bundled song voices cleanly - no unparseable chord can ship", () => {
   for (const entry of PD_LIBRARY) {
@@ -20,6 +22,26 @@ test("every bundled song voices cleanly - no unparseable chord can ship", () => 
 test("bundled song ids are unique", () => {
   const ids = PD_LIBRARY.map((e) => e.id);
   assert.equal(new Set(ids).size, ids.length, "duplicate id in PD_LIBRARY");
+});
+
+test("figure songs (where present) have real notes, positive beats, and voice cleanly", () => {
+  for (const entry of PD_LIBRARY) {
+    const figure = entry.song.figure;
+    if (!figure) continue;
+    assert.ok(figure.length > 0, `${entry.id}: empty figure`);
+    for (const ev of figure) {
+      assert.ok(ev.beats > 0, `${entry.id}: step beats must be > 0 (got ${ev.beats})`);
+      assert.ok(ev.struck.length > 0, `${entry.id}: a figure step strikes nothing`);
+      for (const n of [...ev.struck, ...(ev.held ?? [])]) {
+        assert.ok(Number.isFinite(Note.midi(n.note)), `${entry.id}: unparseable note ${n.note}`);
+        assert.ok(n.finger >= 1 && n.finger <= 5, `${entry.id}: bad finger ${n.finger} on ${n.note}`);
+      }
+    }
+    // The builder must produce a step per strike with both hands resolved.
+    const steps = voiceFigure(figure);
+    assert.equal(steps.length, figure.length, `${entry.id}: figure step count`);
+    assert.ok(steps.every((s) => !s.unparseable), `${entry.id}: figure produced an unparseable step`);
+  }
 });
 
 test("lyric lines (where present) align to valid, ascending chord positions", () => {

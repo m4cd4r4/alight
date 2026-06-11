@@ -16,6 +16,7 @@ import { prettify } from "../music/notes.ts";
 import { lyricIndexAt, timelineSymbols, type Timeline } from "../music/timeline.ts";
 import { easiestShift, keyLabel, transposeSymbols } from "../music/transpose.ts";
 import type { Song, Voicing } from "../music/types.ts";
+import { voiceFigure } from "../music/figure.ts";
 import { voiceSong } from "../music/voicing.ts";
 import { useChordPiano } from "../play/useChordPiano.ts";
 import { usePlayAlong } from "../play/usePlayAlong.ts";
@@ -85,6 +86,10 @@ export function PlayView({
   theme: "light" | "dark";
   onToggleTheme: () => void;
 }) {
+  // Note-sequence songs (an arpeggio / melody transcription) drive the keys from
+  // explicit strikes, not from voicing the chord symbols. When present, voicing
+  // and transpose don't apply.
+  const figure = song.figure && song.figure.length ? song.figure : null;
   // A song may lock its voicing (e.g. Moonlight needs Full); seed from it and grey out the rest.
   const [voicing, setVoicing] = useState<Voicing>(song.lockVoicing ?? "beginner");
   const [fingering, setFingering] = useState(true);
@@ -123,9 +128,13 @@ export function PlayView({
   const audioUrl = timeline?.audioUrl;
   const compact = useCompactViewport();
 
-  const disabledVoicings = song.lockVoicing
-    ? VOICING_OPTIONS.map((o) => o.value).filter((v) => v !== song.lockVoicing)
-    : undefined;
+  // Figures fix the notes outright, so all voicings are inert; a locked song
+  // greys out every voicing but its own.
+  const disabledVoicings = figure
+    ? VOICING_OPTIONS.map((o) => o.value)
+    : song.lockVoicing
+      ? VOICING_OPTIONS.map((o) => o.value).filter((v) => v !== song.lockVoicing)
+      : undefined;
 
   // When a play-along timeline is present its chords drive the keyboard (they
   // are time-aligned); otherwise the song's own chord sequence does.
@@ -135,11 +144,21 @@ export function PlayView({
   );
   // Transpose first (live key change), then voice. Timing is untouched - it comes
   // from the timeline, so the playhead is unaffected by transpose or voicing.
+  // Figure songs skip both: their notes are the transcription, as written.
   const shifted = useMemo(() => transposeSymbols(chordSymbols, transpose), [chordSymbols, transpose]);
-  const steps = useMemo(() => voiceSong(shifted, voicing), [shifted, voicing]);
+  const steps = useMemo(
+    () => (figure ? voiceFigure(figure) : voiceSong(shifted, voicing)),
+    [figure, shifted, voicing],
+  );
   const count = steps.length;
 
-  const pa = usePlayAlong(timeline, count, audioRef);
+  // Per-step rhythm for the figure clock (each step dwells its own beat length).
+  const figureClock = useMemo(
+    () => (figure ? { stepBeats: steps.map((s) => s.beats ?? 1), bpm: song.figureBpm } : null),
+    [figure, steps, song.figureBpm],
+  );
+
+  const pa = usePlayAlong(timeline, count, audioRef, figureClock);
 
   const idx = count ? Math.min(pa.activeIndex, count - 1) : 0;
   const cur = steps[idx];
@@ -214,8 +233,14 @@ export function PlayView({
   }, [sound]);
   useEffect(() => {
     if (!sound || !piano.ready || nowNotes.length === 0) return;
-    piano.playChord(nowNotes);
-  }, [nowNotes, sound, piano.ready, piano.playChord]);
+    // Figure songs strike each note so it rings alongside the held bass (real
+    // sustain); chord songs strike a clean block, cutting the previous one.
+    if (figure) {
+      for (const note of nowNotes) piano.playNote(note);
+    } else {
+      piano.playChord(nowNotes);
+    }
+  }, [nowNotes, sound, piano.ready, piano.playChord, piano.playNote, figure]);
 
   // Completion moment: when the song runs out, offer a calm next step. Pressing
   // any of these replays from the top (pa.togglePlay restarts when ended).
@@ -383,14 +408,14 @@ export function PlayView({
           <>
             <div className="chord-row">
               <div className="now-block">
-                <ChordLabel now={cur} index={idx} count={count} showInversion={voicing !== "beginner"} />
+                <ChordLabel now={cur} index={idx} count={count} showInversion={!figure && voicing !== "beginner"} />
                 {timeline && timeline.lyrics.length > 0 ? (
                   <LyricsPanel lines={timeline.lyrics} activeIndex={lyricIdx} />
                 ) : manualLyrics ? (
                   <LyricsPanel lines={manualLyrics.map((l) => ({ time: l.at, text: l.text }))} activeIndex={manualLineIdx} />
                 ) : null}
               </div>
-              <ChordStaff left={cur.left} right={cur.right} chordName={cur.name} />
+              <ChordStaff left={cur.left} right={cur.right} chordName={cur.name} heldLeft={cur.heldLeft} heldRight={cur.heldRight} />
               <div className="chord-label-side">
                 <div className="capo">{song.capoNote}</div>
                 <div className="pck-chord-next" aria-label={`Next chord: ${nextStep.name}`}>
@@ -414,14 +439,14 @@ export function PlayView({
                   <span className="marker"><svg viewBox="0 0 12 12"><rect x="2" y="2" width="8" height="8" fill="currentColor" /></svg></span>
                   <span>Left hand</span>
                 </div>
-                <Keyboard hand="left" startNote="C2" endNote="E3" nowNotes={cur.left} nextNotes={nextStep.left} size={compact ? "sm" : "md"} showFingering={fingering} onPressNote={sound ? pressNote : undefined} />
+                <Keyboard hand="left" startNote="C2" endNote="E3" nowNotes={cur.left} nextNotes={nextStep.left} heldNotes={cur.heldLeft} size={compact ? "sm" : "md"} showFingering={fingering} onPressNote={sound ? pressNote : undefined} />
               </div>
               <div className="hand-block">
                 <div className="hand-header right">
                   <span className="marker"><svg viewBox="0 0 12 12"><path d="M6 10 L2 3 L10 3 Z" fill="currentColor" /></svg></span>
                   <span>Right hand</span>
                 </div>
-                <Keyboard hand="right" startNote="F3" endNote="B4" nowNotes={cur.right} nextNotes={nextStep.right} size={compact ? "sm" : "md"} showFingering={fingering} onPressNote={sound ? pressNote : undefined} />
+                <Keyboard hand="right" startNote="F3" endNote="B4" nowNotes={cur.right} nextNotes={nextStep.right} heldNotes={cur.heldRight} size={compact ? "sm" : "md"} showFingering={fingering} onPressNote={sound ? pressNote : undefined} />
               </div>
             </div>
 
@@ -496,17 +521,19 @@ export function PlayView({
           </div>
 
           <div className="deck-side deck-right">
-            <div className="ctl-block" role="group" aria-label="Key">
-              <div className="t-label-caps">Key</div>
-              <div className="transpose-ctl">
-                <button type="button" onClick={() => setTransposeBy(-1)} aria-label="Transpose down a semitone">−</button>
-                <span className="key-readout t-mono" aria-label="Current key">{keyLabel(chordSymbols, transpose)}</span>
-                <button type="button" onClick={() => setTransposeBy(1)} aria-label="Transpose up a semitone">+</button>
-                <button type="button" className="easy-key-btn" onClick={() => setTranspose(easiestShift(chordSymbols))}>
-                  Easy key
-                </button>
+            {figure ? null : (
+              <div className="ctl-block" role="group" aria-label="Key">
+                <div className="t-label-caps">Key</div>
+                <div className="transpose-ctl">
+                  <button type="button" onClick={() => setTransposeBy(-1)} aria-label="Transpose down a semitone">−</button>
+                  <span className="key-readout t-mono" aria-label="Current key">{keyLabel(chordSymbols, transpose)}</span>
+                  <button type="button" onClick={() => setTransposeBy(1)} aria-label="Transpose up a semitone">+</button>
+                  <button type="button" className="easy-key-btn" onClick={() => setTranspose(easiestShift(chordSymbols))}>
+                    Easy key
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
             <div className="ctl-block" role="group" aria-label={`Loop${pa.loop ? ` ${pa.loop.start + 1} to ${pa.loop.end + 1}` : ""}`}>
               <div className="t-label-caps">Loop {pa.loop ? `${pa.loop.start + 1}-${pa.loop.end + 1}` : ""}</div>
               <div className="loop-ctl">

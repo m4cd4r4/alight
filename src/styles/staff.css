@@ -54,6 +54,11 @@
 .sn-right .sn-head {
   stroke: var(--hand-right);
 }
+/* Held noteheads (figure songs): the still-ringing bass under the arpeggio,
+   drawn dim so the struck note reads as the one to play now. */
+.sn-held {
+  opacity: 0.4;
+}
 .sn-acc {
   font-size: 15px;
   font-weight: 700;

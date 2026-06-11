@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "test": "node --test src/music/parse.test.ts src/music/lrc.test.ts src/music/timeline.test.ts src/music/transpose.test.ts src/music/voicing.test.ts src/music/staff.test.ts src/data/library.test.ts",
+    "test": "node --test src/music/parse.test.ts src/music/lrc.test.ts src/music/timeline.test.ts src/music/transpose.test.ts src/music/voicing.test.ts src/music/staff.test.ts src/music/figure.test.ts src/data/library.test.ts",
     "typecheck:api": "tsc --noEmit -p api/tsconfig.json"
   },
   "dependencies": {

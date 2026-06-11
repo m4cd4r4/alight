@@ -21,6 +21,8 @@ interface KeyboardProps {
   endNote: string;
   nowNotes: VoicedNote[];
   nextNotes: VoicedNote[];
+  /** Notes still ringing but not struck this step (figure songs); shown dim. */
+  heldNotes?: VoicedNote[];
   size?: KeyboardSize;
   showFingering?: boolean;
   /** When set, every key is tappable and calls back with its note (e.g. "C#4"). */
@@ -54,6 +56,7 @@ export function Keyboard({
   endNote,
   nowNotes,
   nextNotes,
+  heldNotes,
   size = "md",
   showFingering = true,
   onPressNote,
@@ -67,12 +70,15 @@ export function Keyboard({
   });
 
   const nowMap = new Map(nowNotes.map((n) => [n.note, n]));
+  const heldMap = new Map((heldNotes ?? []).map((n) => [n.note, n]));
   const nextMap = new Map(nextNotes.map((n) => [n.note, n]));
   const whiteW = WHITE_WIDTH[size];
 
   function keyState(name: string): { state: KeyState | null; data: VoicedNote | null } {
     const now = nowMap.get(name);
     if (now) return { state: "now", data: now };
+    const held = heldMap.get(name);
+    if (held) return { state: "held", data: held };
     const next = nextMap.get(name);
     if (next) return { state: "next", data: next };
     return { state: null, data: null };
