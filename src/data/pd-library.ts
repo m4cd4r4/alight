@@ -268,6 +268,42 @@ export const PD_LIBRARY: LibraryEntry[] = [
     ["Am", "Am", "E7", "Am", "Am", "Dm", "E7", "Am"]),
   pd("polly-wolly-doodle", "Polly Wolly Doodle", "Traditional American", "D",
     ["D", "D", "A7", "A7", "A7", "A7", "D", "D"]),
+
+  // Popular public-domain classical themes (all composers died well before 1955;
+  // beginner chord reductions, verified against the original compositions - not
+  // any later copyrighted arrangement). The Swan reads well as a future figure.
+  pd("handel-sarabande", "Sarabande (HWV 437)", "George Frideric Handel", "Dm",
+    ["Dm", "A", "F", "C", "Gm", "Dm", "Gm", "A", "Dm"]),
+  pd("air-on-the-g-string", "Air on the G String", "J.S. Bach", "D",
+    ["D", "G", "A", "D", "Bm", "Em", "A7", "D"]),
+  pd("pathetique-2nd-mvt", "Pathétique Sonata (2nd movement)", "Beethoven", "C",
+    ["C", "Am", "F", "G", "C", "Am", "F", "G7", "C"]),
+  pd("sonata-facile-k545", "Sonata Facile, K. 545 (1st movement)", "W.A. Mozart", "C",
+    ["C", "G", "C", "G7", "C", "F", "C", "G7", "C"]),
+  pd("surprise-symphony", "Surprise Symphony (theme)", "Franz Joseph Haydn", "C",
+    ["C", "C", "G7", "C", "C", "C", "G7", "C"]),
+  pd("symphony-40", "Symphony No. 40 (theme)", "W.A. Mozart", "Gm",
+    ["Gm", "Cm", "Gm", "D7", "Gm", "Bb", "Cm", "D7", "Gm"]),
+  pd("traumerei", "Träumerei", "Robert Schumann", "F",
+    ["F", "C7", "F", "Bb", "F", "Gm", "C7", "F"]),
+  pd("morning-mood", "Morning Mood", "Edvard Grieg", "G",
+    ["G", "D", "G", "Em", "C", "G", "D7", "G"]),
+  pd("mountain-king", "In the Hall of the Mountain King", "Edvard Grieg", "Dm",
+    ["Dm", "A7", "Dm", "Gm", "Dm", "A7", "Dm", "Dm"]),
+  pd("standchen", "Ständchen (Serenade)", "Franz Schubert", "Dm",
+    ["Dm", "A7", "Dm", "F", "C", "Gm", "A7", "Dm"]),
+  pd("spring-song", "Spring Song", "Felix Mendelssohn", "A",
+    ["A", "E", "A", "D", "A", "E7", "A", "E7", "A"]),
+  pd("gymnopedie-1", "Gymnopédie No. 1", "Erik Satie", "G",
+    ["G", "D", "G", "D", "G", "C", "Am", "D", "G", "D", "G", "D"]),
+  pd("the-swan", "The Swan (Le Cygne)", "Camille Saint-Saëns", "G",
+    ["G", "D", "G", "C", "G", "A7", "D", "G", "Em", "C", "D", "G"]),
+  pd("new-world-largo", "Largo (New World Symphony)", "Antonín Dvořák", "Bb",
+    ["Bb", "F", "Bb", "Eb", "Bb", "F", "Bb", "Gm", "Eb", "Bb", "F", "Bb"]),
+  pd("swan-lake", "Swan Lake (theme)", "Pyotr Ilyich Tchaikovsky", "Bm",
+    ["Bm", "F#m", "G", "D", "Em", "A7", "D", "Bm", "F#m", "G", "A7", "Bm"]),
+  pd("polovtsian-dance", "Polovtsian Dance (Prince Igor)", "Alexander Borodin", "D",
+    ["D", "G", "D", "A7", "D", "Bm", "G", "A7", "D", "G", "A7", "D"]),
 ];
 
 // Attach the public-domain lyric lines (kept in a separate map so the entries
