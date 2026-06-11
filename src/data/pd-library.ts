@@ -7,7 +7,7 @@
 // progressions are not copyrightable and every composition here is public
 // domain (composers died 70+ years ago, or traditional/folk/nursery).
 
-import type { Song, Voicing } from "../music/types.ts";
+import type { FigureNote, NoteEvent, Song, Voicing } from "../music/types.ts";
 import type { Timeline } from "../music/timeline.ts";
 import { PD_LYRICS } from "./pd-lyrics.ts";
 
@@ -25,7 +25,7 @@ export interface LibraryEntry {
 
 const PD = "Public Domain";
 
-type PdOpts = { lockVoicing?: Voicing };
+type PdOpts = { lockVoicing?: Voicing; figure?: NoteEvent[]; figureBpm?: number };
 function pd(id: string, title: string, artist: string, key: string, chords: string[], opts: PdOpts = {}): LibraryEntry {
   return {
     id,
@@ -35,11 +35,51 @@ function pd(id: string, title: string, artist: string, key: string, chords: stri
       capoNote: "",
       chords,
       ...(opts.lockVoicing ? { lockVoicing: opts.lockVoicing } : {}),
+      ...(opts.figure ? { figure: opts.figure } : {}),
+      ...(opts.figureBpm ? { figureBpm: opts.figureBpm } : {}),
     },
     timeline: null,
     key,
     license: PD,
   };
+}
+
+// Moonlight Sonata, 1st movement - the iconic opening: the right hand rolls the
+// C# minor triad (G#-C#-E) as continuous triplets over a sustained low C# octave
+// in the left hand. This is the "well-known 3-key sound" - it must play as
+// individual notes, not a block chord, which is why it's a note-sequence song.
+// Two bars of the c#-minor introduction (Beethoven, 1801 - public domain), with
+// the bass struck on each downbeat and held under the arpeggio. Real key (C#m),
+// real fingering (RH 1-2-5; LH octave 5 below, 1 above).
+function moonlightOpening(): NoteEvent[] {
+  const BASS: FigureNote[] = [
+    { note: "C#2", hand: "left", finger: 5 },
+    { note: "C#3", hand: "left", finger: 1 },
+  ];
+  const ARP: { note: string; finger: number }[] = [
+    { note: "G#3", finger: 1 },
+    { note: "C#4", finger: 2 },
+    { note: "E4", finger: 5 },
+  ];
+  const BARS = 2;
+  const GROUPS_PER_BAR = 4; // 12 triplet-notes per bar
+  const events: NoteEvent[] = [];
+  for (let bar = 0; bar < BARS; bar++) {
+    for (let g = 0; g < GROUPS_PER_BAR; g++) {
+      for (let i = 0; i < ARP.length; i++) {
+        const barDownbeat = g === 0 && i === 0;
+        const right: FigureNote = { note: ARP[i].note, hand: "right", finger: ARP[i].finger };
+        events.push({
+          // The bass is struck on each bar's downbeat, then held under the roll.
+          struck: barDownbeat ? [...BASS, right] : [right],
+          held: barDownbeat ? [] : BASS,
+          beats: 1 / 3,
+          label: "C#m",
+        });
+      }
+    }
+  }
+  return events;
 }
 
 export const PD_LIBRARY: LibraryEntry[] = [
@@ -115,10 +155,10 @@ export const PD_LIBRARY: LibraryEntry[] = [
     ["G", "D", "G", "D", "G", "C", "D", "G"]),
   pd("fur-elise", "Fur Elise", "Beethoven", "Am",
     ["Am", "E", "Am", "E", "Am", "C", "G", "Am", "E", "Am"]),
-  // Locked to Full voicing - its harmony loses its character if simplified to triads.
-  // A reduction of the opening, transposed to Am for reachable note names.
-  pd("moonlight-sonata", "Moonlight Sonata (1st movement)", "Beethoven", "Am",
-    ["Am", "Am", "Dm", "E7", "Am", "F", "Dm7", "E7", "Am"], { lockVoicing: "full" }),
+  // A note-sequence song: the real opening arpeggio in C# minor, played one note
+  // at a time over the held bass (see moonlightOpening above), not a block chord.
+  pd("moonlight-sonata", "Moonlight Sonata (1st movement)", "Beethoven", "C#m",
+    ["C#m"], { figure: moonlightOpening(), figureBpm: 54 }),
   pd("brahms-lullaby", "Brahms' Lullaby", "Johannes Brahms", "G",
     ["G", "D7", "G", "D7", "G", "C", "G", "D7", "G"]),
   pd("vivaldi-spring", "Spring (The Four Seasons)", "Antonio Vivaldi", "D",
