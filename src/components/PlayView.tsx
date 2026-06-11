@@ -93,6 +93,10 @@ export function PlayView({
   const [transpose, setTranspose] = useState(0);
   const [volume, setVolume] = useState(1);
   const [needTempoHint, setNeedTempoHint] = useState(false);
+  // Set when Play is pressed with Sound on but the sampler is still loading: we
+  // hold the clock until the piano is ready so the first chords don't fire
+  // silently and then bunch up the moment audio finally arrives.
+  const [waitingForSound, setWaitingForSound] = useState(false);
   // Hear the chord you're playing (sampled piano). Off by default - audio needs
   // a user gesture to start, and a beginner should opt in rather than be
   // surprised by sound. Remembered across sessions.
@@ -145,6 +149,40 @@ export function PlayView({
   const goNext = useCallback(() => { dismissCoach(); pa.next(); }, [pa, dismissCoach]);
   const goTo = useCallback((i: number) => { dismissCoach(); pa.goTo(i); }, [pa, dismissCoach]);
 
+  // Start playback, but when Sound is on (and we're driving the silent clock,
+  // not a real recording) wait for the sampler before the clock runs - otherwise
+  // the first chord's sound lands late and crowds the second. The deferred-start
+  // effect below resumes once the piano is ready.
+  const requestPlay = useCallback(() => {
+    if (sound) piano.prime();
+    if (sound && !audioUrl && !piano.ready) {
+      setWaitingForSound(true);
+      return;
+    }
+    pa.togglePlay();
+  }, [sound, audioUrl, piano, pa]);
+
+  // The transport button: pause when running, cancel a pending start, else play.
+  const onTransportToggle = useCallback(() => {
+    dismissCoach();
+    if (waitingForSound) { setWaitingForSound(false); return; }
+    if (pa.isPlaying || pa.countingIn) { pa.togglePlay(); return; }
+    requestPlay();
+  }, [dismissCoach, waitingForSound, pa, requestPlay]);
+
+  // Sampler finished loading while a start was pending - run the clock now.
+  useEffect(() => {
+    if (waitingForSound && piano.ready) {
+      setWaitingForSound(false);
+      pa.togglePlay();
+    }
+  }, [waitingForSound, piano.ready, pa]);
+
+  // A new song clears any pending start so it can't fire on the wrong track.
+  useEffect(() => {
+    setWaitingForSound(false);
+  }, [timeline, song]);
+
   // Sampled-piano playback. Enabling Sound (or tapping a key) primes the audio
   // from a real gesture; once loaded, each chord change is struck so you hear
   // what the keys light. Tapping a key plays just that note.
@@ -183,19 +221,16 @@ export function PlayView({
   // any of these replays from the top (pa.togglePlay restarts when ended).
   const canHarder = !song.lockVoicing && voicing !== "full";
   const replay = useCallback(() => {
-    if (sound) piano.prime();
-    pa.togglePlay();
-  }, [sound, piano, pa]);
+    requestPlay();
+  }, [requestPlay]);
   const replaySlower = useCallback(() => {
     pa.setSpeed(pa.speed > 0.75 ? 0.75 : 0.5); // step down toward the 0.5 floor
-    if (sound) piano.prime();
-    pa.togglePlay();
-  }, [sound, piano, pa]);
+    requestPlay();
+  }, [pa, requestPlay]);
   const tryHarder = useCallback(() => {
     setVoicing((v) => HARDER_VOICING[v]);
-    if (sound) piano.prime();
-    pa.togglePlay();
-  }, [sound, piano, pa]);
+    requestPlay();
+  }, [requestPlay]);
 
   const setTransposeBy = useCallback(
     (delta: number) => setTranspose((t) => Math.max(-MAX_TRANSPOSE, Math.min(MAX_TRANSPOSE, t + delta))),
@@ -439,13 +474,9 @@ export function PlayView({
             <Transport
               onPrev={goPrev}
               onNext={goNext}
-              isPlaying={pa.isPlaying}
+              isPlaying={pa.isPlaying || waitingForSound}
               canPlay={pa.canPlay}
-              onTogglePlay={() => {
-                dismissCoach();
-                if (sound) piano.prime();
-                pa.togglePlay();
-              }}
+              onTogglePlay={onTransportToggle}
               onBlocked={onBlockedPlay}
             />
             <div className="tempo-controls">
@@ -456,7 +487,11 @@ export function PlayView({
               ) : null}
             </div>
             <div className="transport-hint t-text-xs" aria-live="polite">
-              {needTempoHint ? "Tap a tempo to enable Play - or use Space / the arrows to step through." : hint}
+              {waitingForSound
+                ? "Loading sound..."
+                : needTempoHint
+                  ? "Tap a tempo to enable Play - or use Space / the arrows to step through."
+                  : hint}
             </div>
           </div>
 
