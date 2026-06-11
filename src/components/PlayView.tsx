@@ -16,7 +16,7 @@ import { prettify } from "../music/notes.ts";
 import { lyricIndexAt, timelineSymbols, type Timeline } from "../music/timeline.ts";
 import { easiestShift, keyLabel, transposeSymbols } from "../music/transpose.ts";
 import type { Song, Voicing } from "../music/types.ts";
-import { voiceFigure } from "../music/figure.ts";
+import { stripCards, voiceFigure } from "../music/figure.ts";
 import { voiceSong } from "../music/voicing.ts";
 import { useChordPiano } from "../play/useChordPiano.ts";
 import { usePlayAlong } from "../play/usePlayAlong.ts";
@@ -163,6 +163,12 @@ export function PlayView({
   const idx = count ? Math.min(pa.activeIndex, count - 1) : 0;
   const cur = steps[idx];
   const nextStep = count ? steps[(idx + 1) % count] : undefined;
+
+  // Overview cards: one per chord, or one per harmony run for figures. Drives the
+  // "All chords" count so the heading matches the grouped cards the strip shows.
+  const cards = useMemo(() => stripCards(steps, !!figure), [steps, figure]);
+  const cardCount = cards.length;
+  const activeCardNo = Math.max(1, cards.findIndex((c) => idx >= c.startIndex && idx <= c.endIndex) + 1);
 
   const goPrev = useCallback(() => { dismissCoach(); pa.prev(); }, [pa, dismissCoach]);
   const goNext = useCallback(() => { dismissCoach(); pa.next(); }, [pa, dismissCoach]);
@@ -392,7 +398,7 @@ export function PlayView({
           <>
             <div className="grid-heading">
               <span className="grid-heading-title">All chords</span>
-              <span className="chord-position t-mono">{idx + 1} / {count}</span>
+              <span className="chord-position t-mono">{activeCardNo} / {cardCount}</span>
             </div>
             <ChordStrip
               steps={steps}
@@ -402,6 +408,7 @@ export function PlayView({
               showLyrics={stripLyrics && hasLyrics}
               lyricFor={lyricFor}
               loop={pa.loop}
+              grouped={!!figure}
             />
           </>
         ) : (
@@ -458,6 +465,7 @@ export function PlayView({
               showLyrics={stripLyrics && hasLyrics}
               lyricFor={lyricFor}
               loop={pa.loop}
+              grouped={!!figure}
             />
           </>
         )}

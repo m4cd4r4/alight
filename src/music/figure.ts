@@ -33,3 +33,48 @@ export function voiceFigure(figure: NoteEvent[]): VoicedStep[] {
     unparseable: false,
   }));
 }
+
+/** One overview-strip card: a contiguous run of steps shown as a single chord. */
+export interface StripCard {
+  /** First step index this card covers (where a tap jumps the playhead). */
+  startIndex: number;
+  /** Last step index this card covers (inclusive). */
+  endIndex: number;
+  name: string;
+  left: VoicedNote[];
+  right: VoicedNote[];
+}
+
+function mergeNotes(into: Map<string, VoicedNote>, notes: VoicedNote[]): void {
+  for (const n of notes) if (!into.has(n.note)) into.set(n.note, n);
+}
+
+/**
+ * Cards for the overview strip/grid. Chord songs get one card per step (the
+ * playhead is a chord). Figure songs group consecutive steps that share a
+ * harmony label into one card showing the whole chord - so a 24-note arpeggio
+ * reads as a single "C#m" card, not 24 near-identical single-key cards.
+ */
+export function stripCards(steps: VoicedStep[], grouped: boolean): StripCard[] {
+  if (!grouped) {
+    return steps.map((s, i) => ({ startIndex: i, endIndex: i, name: s.name, left: s.left, right: s.right }));
+  }
+  const cards: StripCard[] = [];
+  for (let i = 0; i < steps.length; i++) {
+    const s = steps[i];
+    const open = cards[cards.length - 1];
+    if (open && open.name === s.name) {
+      // Same harmony, still running: fold this strike's keys into the card.
+      const left = new Map(open.left.map((n) => [n.note, n]));
+      const right = new Map(open.right.map((n) => [n.note, n]));
+      mergeNotes(left, s.left);
+      mergeNotes(right, s.right);
+      open.endIndex = i;
+      open.left = [...left.values()];
+      open.right = [...right.values()];
+    } else {
+      cards.push({ startIndex: i, endIndex: i, name: s.name, left: [...s.left], right: [...s.right] });
+    }
+  }
+  return cards;
+}
