@@ -1,6 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
+import "./styles/fonts.ts";
 import "./styles/colors_and_type.css";
 import "./styles/piano.css";
 import "./styles/staff.css";

@@ -4,8 +4,8 @@
    Light theme is primary; dark theme via [data-theme="dark"].
    ============================================================ */
 
-/* Webfonts. Self-host preferred; falling back to Google CDN. */
-@import url('https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+/* Webfonts are self-hosted and bundled by Vite - see src/styles/fonts.ts
+   (imported in main.tsx). No runtime dependency on fonts.googleapis.com. */
 
 :root {
   /* ---- Color: surface and ink (light theme) ---------------- */
