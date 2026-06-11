@@ -30,8 +30,9 @@ screen, and play the song that's already in your head.
 - 🎧 **Play along to the real recording.** Paste a YouTube link and Alight pulls the chords, beats,
   and synced lyrics - then plays the song while the keyboards follow it in time. Slow it to 0.75x
   for practice (the pitch stays put) and loop the tricky bar.
-- 📚 **80 public-domain songs built in.** Nursery rhymes, folk tunes, sea shanties, spirituals,
-  carols, rounds, and classical themes - most with singable lyrics, all instant, nothing to break.
+- 📚 **96 public-domain songs built in.** Nursery rhymes, folk tunes, sea shanties, spirituals,
+  carols, rounds, and classical themes (Bach, Mozart, Beethoven, Grieg, Satie, Tchaikovsky and more) -
+  most with singable lyrics, all instant, nothing to break.
 - 🌗 **Light and dark.** A calm "showroom" look by day, glowing keys by night.
 
 ## A look around
