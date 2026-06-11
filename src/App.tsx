@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Gate } from "./components/Gate.tsx";
 import { LoadView } from "./components/LoadView.tsx";
 import { PlayView } from "./components/PlayView.tsx";
+import { PUBLIC_ONLY } from "./config.ts";
 import { LIBRARY } from "./data/library.ts";
 import { isUnlocked } from "./gate.ts";
 import type { Timeline } from "./music/timeline.ts";
@@ -44,7 +45,8 @@ function initialLoaded(): Loaded | null {
 export default function App() {
   const [loaded, setLoaded] = useState<Loaded | null>(initialLoaded);
   const [theme, setTheme] = useState<Theme>(initialTheme);
-  const [unlocked, setUnlocked] = useState(isUnlocked);
+  // The public, PD-only build has nothing gated to protect, so it skips the gate.
+  const [unlocked, setUnlocked] = useState(() => PUBLIC_ONLY || isUnlocked());
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -70,7 +72,7 @@ export default function App() {
 
   const onLoad = (song: Song, timeline: Timeline | null = null) => setLoaded({ song, timeline });
 
-  if (!unlocked) {
+  if (!PUBLIC_ONLY && !unlocked) {
     return <Gate onUnlock={() => setUnlocked(true)} theme={theme} onToggleTheme={onToggleTheme} />;
   }
 

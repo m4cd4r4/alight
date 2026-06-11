@@ -4,6 +4,7 @@
 // for when the fetch is blocked or the song is not found.
 
 import { type FormEvent, useState } from "react";
+import { PUBLIC_ONLY } from "../config.ts";
 import { parse } from "../music/parse.ts";
 import type { Timeline } from "../music/timeline.ts";
 import type { Song } from "../music/types.ts";
@@ -244,58 +245,69 @@ export function LoadView({
         <div>
           <div className="heading">
             <h1>Find a song</h1>
-            <div className="sub">Pick a free song to learn, search any title, or paste a chord sheet on the right.</div>
+            <div className="sub">
+              {PUBLIC_ONLY
+                ? "Pick a free song to learn, or paste a chord sheet on the right."
+                : "Pick a free song to learn, search any title, or paste a chord sheet on the right."}
+            </div>
           </div>
 
           <SongLibrary onLoad={onLoad} />
 
-          {state.status === "error" ? <FetchBanner message={state.message} /> : null}
-
-          <form className="search-field" onSubmit={runSearch}>
-            <button type="submit" className="search-icon" aria-label="Search">
-              <svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="5.5" fill="none" stroke="currentColor" strokeWidth="1.25" /><line x1="14.6" y1="14.6" x2="19" y2="19" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" /></svg>
-            </button>
-            <input
-              autoFocus
-              placeholder="Type a song title"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              aria-label="Song title"
-            />
-          </form>
-
-          {state.status === "searching" ? (
-            <div className="load-status"><span className="spinner" />Searching Ultimate Guitar</div>
-          ) : null}
-
-          {state.status === "loading-version" ? (
-            <div className="load-status"><span className="spinner" />Loading that version</div>
-          ) : null}
-
-          {state.status === "ready" ? (
+          {/* Online features (title search, YouTube, play-along) need a backend;
+              the public, PD-only build drops them and keeps the bundled library
+              and the client-side chord-sheet paste. */}
+          {!PUBLIC_ONLY && (
             <>
-              <div className="t-label-caps best-match-label">Best match</div>
-              <MatchCard response={state.response} onPick={() => loadResponse(state.response)} />
-              {parseNote ? <div className="paste-error">{parseNote}</div> : null}
-              <Alternates versions={state.response.versions} onPick={loadVersion} />
-            </>
-          ) : null}
+              {state.status === "error" ? <FetchBanner message={state.message} /> : null}
 
-          {state.status === "not-found" ? (
-            <>
-              <div className="t-label-caps best-match-label">No match</div>
-              <div className="match-card is-soft">
-                <span>
-                  <span className="title" style={{ fontSize: 18 }}>No chord sheet found.</span>
-                  <span className="artist">Try a different title, or paste the chords on the right.</span>
-                </span>
-              </div>
-            </>
-          ) : null}
+              <form className="search-field" onSubmit={runSearch}>
+                <button type="submit" className="search-icon" aria-label="Search">
+                  <svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="5.5" fill="none" stroke="currentColor" strokeWidth="1.25" /><line x1="14.6" y1="14.6" x2="19" y2="19" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" /></svg>
+                </button>
+                <input
+                  autoFocus
+                  placeholder="Type a song title"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  aria-label="Song title"
+                />
+              </form>
 
-          <div className="load-divider" />
-          <YoutubeSearch onLoad={onLoad} />
-          <AnalyzeInput onLoad={onLoad} />
+              {state.status === "searching" ? (
+                <div className="load-status"><span className="spinner" />Searching Ultimate Guitar</div>
+              ) : null}
+
+              {state.status === "loading-version" ? (
+                <div className="load-status"><span className="spinner" />Loading that version</div>
+              ) : null}
+
+              {state.status === "ready" ? (
+                <>
+                  <div className="t-label-caps best-match-label">Best match</div>
+                  <MatchCard response={state.response} onPick={() => loadResponse(state.response)} />
+                  {parseNote ? <div className="paste-error">{parseNote}</div> : null}
+                  <Alternates versions={state.response.versions} onPick={loadVersion} />
+                </>
+              ) : null}
+
+              {state.status === "not-found" ? (
+                <>
+                  <div className="t-label-caps best-match-label">No match</div>
+                  <div className="match-card is-soft">
+                    <span>
+                      <span className="title" style={{ fontSize: 18 }}>No chord sheet found.</span>
+                      <span className="artist">Try a different title, or paste the chords on the right.</span>
+                    </span>
+                  </div>
+                </>
+              ) : null}
+
+              <div className="load-divider" />
+              <YoutubeSearch onLoad={onLoad} />
+              <AnalyzeInput onLoad={onLoad} />
+            </>
+          )}
         </div>
 
         <PasteFallback onLoad={onLoad} />
